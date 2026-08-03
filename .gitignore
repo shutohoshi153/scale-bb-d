@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Generated at run time — reproduction outputs
+reproduction/backtest/output/
+reproduction/backtest/data/disease_panel_mortality.csv
+
+# Generated at run time — generational pipeline
+reproduction/generational/KDB/experience_rate.db
+reproduction/generational/KDB/data/processed/scalebb_apc_fit_*
+reproduction/generational/KDB/data/processed/scalebb_apc_projection_*
+reproduction/generational/KDB/data/processed/predicted_rate_*/
+reproduction/generational/KDB/output/
+
+# OS / editor
+.DS_Store
+Thumbs.db

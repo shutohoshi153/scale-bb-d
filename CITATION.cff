@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: >-
+  If you use this repository, please cite the paper below.
+title: >-
+  Scale BB-D — supplementary material and reproduction package for "Extending
+  Scale BB from All-Cause to Cause-Specific Mortality"
+type: software
+authors:
+  - family-names: Hoshi
+    given-names: Shuto
+repository-code: "https://github.com/shutohoshi153/scale-bb-d"
+license: MIT
+preferred-citation:
+  type: conference-paper
+  title: >-
+    Extending Scale BB from All-Cause to Cause-Specific Mortality: A Scenario
+    Generator for Disease-Contingent Insurance under Economic-Value-Based
+    Valuation (ICS/IFRS 17)
+  authors:
+    - family-names: Hoshi
+      given-names: Shuto
+  year: 2026
+  conference:
+    name: "32nd International Congress of Actuaries (ICA 2026)"
+# NOTE: complete the co-author list before tagging the release that accompanies
+# the presentation.

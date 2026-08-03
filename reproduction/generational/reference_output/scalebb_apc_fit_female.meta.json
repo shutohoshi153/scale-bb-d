@@ -1,0 +1,32 @@
+{
+  "run_id": "female_apc02_age20",
+  "kind": "fit",
+  "source": "mortality",
+  "diseases": [
+    "cancer",
+    "heart_disease",
+    "cerebrovascular"
+  ],
+  "sex": "female",
+  "section": "total",
+  "apc_config": {
+    "long_term_rate": 0.01,
+    "convergence_year": 2035,
+    "last_observed_year": null,
+    "lam_row": 40.0,
+    "lam_col": 60.0,
+    "diff_order": 2,
+    "age_taper_start": 90,
+    "age_taper_end": 120,
+    "horizon_year": 2100,
+    "lam_cohort": 40.0,
+    "covid_years": [
+      2020,
+      2021,
+      2022
+    ],
+    "covid_weight": 0.3,
+    "covid_mode": "dummy"
+  },
+  "flavor": "apc"
+}

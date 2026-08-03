@@ -1,0 +1,100 @@
+# Experience Rate Analysis System - Configuration
+
+database:
+  # SQLite database file path (relative to project root)
+  path: "experience_rate.db"
+
+parameters:
+  # Closing month of the observation year (1-12)
+  observation_year_end_month: 3
+  # Closing month of the fiscal year (1-12)
+  fiscal_year_end_month: 9
+
+paths:
+  # Output directory
+  output: "output"
+  # Location of processed panels (disease incidence series)
+  processed: "data/processed"
+  # Location of raw e-Stat data
+  row_data: "data/RowData"
+
+# Parameters for disease incidence-rate estimation
+incidence:
+  # Annualization factor for the initial-visit flow (rate_type='initial_visit')
+  #   The Z70 outpatient initial-visit utilization rate is "per 100,000 population per survey day".
+  #   Conversion to annual incidence rate: rate_per_100k x annual_conversion_days / 100,000
+  #   Guideline: around 240 based on annual weekday clinic days.
+  initial_visit_annual_days: 240
+  # Correction by the reciprocal of the rate of multiple "initial visits" for the same disease within a year
+  #   1.0 = no correction, 0.7 = 30% reduction (excludes duplicate initial visits)
+  initial_visit_duplicate_adjust: 0.7
+  # For the discharge flow (rate_type='discharge'): days per year
+  discharge_annual_days: 365
+  # Average length of stay in general beds (fallback when H20-47 is unavailable, days)
+  los_default: 33.3
+
+# -----------------------------------------------------------------------------
+# Recommended parameter presets for the Scale BB / APC extension models
+# -----------------------------------------------------------------------------
+# Referenced from the CLI via --preset <name>. Unspecified values use CLI defaults.
+# Presets have an override hierarchy by disease, sex, and operational purpose:
+#
+#   scalebb_presets.defaults                 : global defaults
+#   scalebb_presets.diseases.<disease>       : per-disease overrides
+#   scalebb_presets.sex.<sex>                : per-sex overrides
+#   scalebb_presets.generational             : Generational Projection settings
+#
+# Merge precedence: defaults -> diseases -> sex (later wins)
+# -----------------------------------------------------------------------------
+scalebb_presets:
+  defaults:
+    # Smoothing parameters (λ) - larger = smoother. The original Scale BB uses around 40
+    #   Ages 20-39 have small rates and relatively large year-to-year variation, so the calendar-year direction is stronger
+    lam_row: 40.0        # age direction (age)
+    lam_col: 60.0        # calendar-year direction (period)  * 40->60 to suppress young-age noise
+    lam_cohort: 40.0     # cohort direction (APC only)
+    # Long-term rate and convergence year (Section 2.4 of the original)
+    long_term_rate: 0.01
+    convergence_year: 2035
+    horizon_year: 2100    # entry at age 20 x tracked to attained age 85 (2100 gives ample margin)
+    # Age range (mortality_apc_panel is valid for 20-85 in 5-year classes)
+    #   Lowering to age 20 also supports insurance products for younger ages
+    age_min: 20
+    age_max: 85
+    # Handling of the COVID-19 period (APC only)
+    covid_mode: dummy         # 'dummy' / 'weight_down' / 'none'
+    covid_years: [2020, 2021, 2022]
+    covid_weight: 0.3         # weight factor when weight_down
+    # Cohort extrapolation strategy (APC only)
+    cohort_extrapolation: last_drift   # 'flat' or 'last_drift'
+
+  # Per-disease overrides (recommendations based on research backtest results)
+  diseases:
+    cancer:
+      # Cancer is most affected by the COVID period (deferred care -> lower observed values in 2020-2022)
+      covid_mode: dummy
+    heart_disease:
+      covid_mode: dummy
+    cerebrovascular:
+      # Cerebrovascular disease has a strong declining trend from before the COVID period, so a weaker λ_cohort
+      covid_mode: dummy
+      lam_cohort: 20.0
+
+  # Per-sex overrides (currently follow the defaults)
+  sex:
+    total: {}
+    male: {}
+    female: {}
+
+  # Generational Projection (1D tables for downstream distribution) settings
+  generational:
+    # Default issue-year range (used by scalebb-gen-table --preset)
+    issue_years: [2024, 2025, 2026, 2027, 2028]
+    # Issue age (0 = newborn products, 20 = young-adult products, 40 = adult products)
+    issue_age: 20
+    # Output age range (single ages) - tracked from age 20 for young-adult products
+    age_min: 20
+    age_max: 85
+    # Single-age interpolation (recommended true since mortality_apc_panel uses 5-year classes)
+    interpolate_age: true
+    interpolation_method: log_linear   # 'log_linear' / 'linear' / 'log_pchip'
