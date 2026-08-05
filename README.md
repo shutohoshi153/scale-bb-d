@@ -127,7 +127,7 @@ Please cite the paper rather than this repository; see `CITATION.cff`.
 > Hoshi, S. et al. (2026). *Extending Scale BB from All-Cause to
 > Cause-Specific Mortality: A Scenario Generator for Disease-Contingent
 > Insurance under Economic-Value-Based Valuation (ICS/IFRS 17).*
-> 32nd International Congress of Actuaries (ICA 2026).
+> 33nd International Congress of Actuaries (ICA 2026).
 
 ## Disclaimer
 
