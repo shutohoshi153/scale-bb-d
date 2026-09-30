@@ -11,6 +11,8 @@
 【計算式】年次ステップ、決定論的。[CHG 2026-09-30] 死因別死亡給付としての評価に改めた:
     BEL(x0) = Σ_t  P(t) · S(t) · q_dis(x0+t, 2026+t) · SA
     S(0) = 1,  S(t+1) = S(t) · (1 − q_dis − q_other − q_lapse)
+    [CHG 2026-09-30] q は中央死亡率 m から q_tot = 1 − exp(−m_dis − m_other)、q_dis = q_tot·m_dis/(m_dis + m_other)
+    で求める (to_probabilities)。率表 scn_claim_rates.csv / scn_mortality_rates.csv は中央死亡率 m (10 万で除した値) のまま
     q_dis   = 3 死因(がん・心疾患・脳血管疾患)のシナリオ別死亡率の合計(給付事由 = 3 死因による死亡)
     q_other = その他の死因の死亡率 = 全死因 BASE − 3 死因 BASE(全シナリオ共通 — トレンド感応度を
               3 死因の率のみに帰着)。水準ストレスを含むシナリオ(ICS_C・ESR_M)では ×1.125
@@ -84,15 +86,32 @@ def other_cause_rates(q_dis_base: np.ndarray, q_death_base: np.ndarray) -> np.nd
     return np.maximum(other, 0.0)
 
 
-def bel_single(q_dis: np.ndarray, q_other: np.ndarray, disc: np.ndarray,
+def to_probabilities(m_dis: np.ndarray, m_other: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """[ADD 2026-09-30] 中央死亡率 m (年率、人口あたり) を 1 年死亡確率 q に変換する (再審査 A-9)。
+
+    各年齢・年で死亡の力が一定と仮定し (一定ハザード近似)、全死因の確率 q = 1 − exp(−m_dis − m_other) を
+    死因別の率に比例して配分する (競合リスク): q_dis = q · m_dis / (m_dis + m_other)、q_other = q − q_dis。
+    2026-09-30 の再審査対応までは q ≈ m (率をそのまま確率として控除) としていた。
+    """
+    m_dis = np.asarray(m_dis, dtype=float); m_other = np.asarray(m_other, dtype=float)
+    m_tot = m_dis + m_other
+    q_tot = -np.expm1(-m_tot)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        q_dis = np.where(m_tot > 0, q_tot * m_dis / m_tot, 0.0)
+    return q_dis, q_tot - q_dis
+
+
+def bel_single(m_dis: np.ndarray, m_other: np.ndarray, disc: np.ndarray,
                lapse: float = LAPSE_RATE) -> float:
     """1 モデルポイント・1 シナリオの BEL(給付現価)を計算する。
 
-    q_dis は給付事由(3 死因による死亡)、q_other はその他の死因による死亡(脱退のみ)。
+    m_dis は給付事由 (3 死因による死亡) の中央死亡率、m_other はその他の死因の中央死亡率 (脱退のみ)。
+    to_probabilities で 1 年死亡確率に変換してから用いる。
 
     lapse は解約率(既定は共通仮定 3%)。calc_esr_life_risk.py の
     解約・失効リスクストレスで ±25% を適用する際に差し替える。
     """
+    q_dis, q_other = to_probabilities(m_dis, m_other)
     surv = 1.0
     bel = 0.0
     for t in range(len(q_dis)):

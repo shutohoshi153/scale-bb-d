@@ -3,5 +3,5 @@ V2 単調性 UP50 < BASE,True,
 V2 単調性 BASE < DN50,True,
 V2 単調性 DN50 < ICS_T,True,
 V2 単調性 ICS_T < ICS_C,True,
-V3 合成整合 ICS_C / ICS_T vs 1.125,True,"min=1.0863, max=1.1102"
-V3 合成整合 ESR_M / BASE vs 1.125,True,"min=1.0901, max=1.1145"
+V3 合成整合 ICS_C / ICS_T vs 1.125,True,"min=1.0856, max=1.1097"
+V3 合成整合 ESR_M / BASE vs 1.125,True,"min=1.0894, max=1.1141"

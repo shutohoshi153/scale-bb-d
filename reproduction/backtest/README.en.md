@@ -51,7 +51,9 @@ The input CSV has the columns of `data/disease_panel_mortality.csv`:
 | `rate_per_100k` | the rate to be projected (incidence or claim rate per 100,000 exposed) |
 | `deaths` | number of events behind the rate (optional; not used by the equal-weight fit) |
 
-Outputs go to `output/<name>/tables/` (`own_data_summary.csv` holds MAPE and DA by series). Compare `DA_scalebb` with `DA_majority_benchmark` (§3.3 of the paper) and `MAPE_scalebb` with the three baselines (§5). A cutoff on either side of a structural break is informative (§4). For scenario generation and BEL valuation on your own data see "Running on your own data" in `../bel_demo/README.md`.
+Outputs go to `output/<name>/tables/` (`own_data_summary.csv` holds MAPE and DA by series). Compare `DA_scalebb` with `DA_majority_benchmark` (§3.3 of the paper) and `MAPE_scalebb` with the three baselines (§5). A cutoff on either side of a structural break is informative (§4). **Default handling of zero rates** (common in incidence data with few events): at ages whose cutoff-year rate is zero or missing the projection starts from the smoothed rate (the default of `select_base_rates`), and those ages are left out of the directional accuracy, since a direction measured from zero is not the direction of the projection (§3.3 of the paper). MAPE leaves out cells whose actual rate is zero. For series with many zeros, widen the age groups or aggregate to series with more events first.
+
+For scenario generation and BEL valuation on your own data see "Running on your own data" in `../bel_demo/README.md`.
 
 ---
 
@@ -65,13 +67,13 @@ backtest/
 ├── run_backtest.py                  [2] ScaleBB fit/project + validation (§3.2)
 ├── run_baselines.py                 [3] naive/mean_3pts/loglin baselines (§3.3.1)
 ├── compute_directional_accuracy.py  [4] Directional accuracy DA (§3.3.2, Eqs. 3.9–3.10); includes the reference rules always_down / sign_last_change, the majority-direction share, the PT test and block-bootstrap intervals [ADD 2026-09-02]
-├── compare_base_levels.py           [5b] sensitivity of Scale BB-D MAPE to the projection base level (observed / mean of last 3 observation points / smoothed) (§5.4, Table 5.4) [ADD 2026-09-03]
-├── compute_weighted_mape.py         [5c] deaths-weighted and ages-40+ MAPE (§5.4, Table 5.5) [ADD 2026-09-03]
+├── compare_base_levels.py           [5b] sensitivity of Scale BB-D MAPE to the projection base level (observed / mean of last 3 observation points / smoothed) (§5.4, Table 5.5) [ADD 2026-09-03]
+├── compute_weighted_mape.py         [5c] deaths-weighted and ages-40+ MAPE (§5.4, Table 5.4) [ADD 2026-09-03]
 ├── compute_da_inference.py          [4] two-way (age × validation year) bootstrap intervals for DA and its differences from the majority benchmark and loglin_trend (§3.3, Table 6.1) [ADD 2026-09-30]
 ├── compute_rolling_origin.py        [4b] Rolling-origin DA and MAPE gap for cutoffs 2014–2022 (§6.6, Fig. 6.4) [ADD 2026-09-02]
 ├── run_own_data.py                  runs the same validation on your own rate panel (§7.3 of the paper) [ADD 2026-09-30]
-├── compare_same_anchor.py           [3] trend comparison from a common starting level (observed / 3-point mean / each method's own fitted level) (§5.3, Table 5.5) [ADD 2026-09-30]
-├── compute_fixed_horizon.py         [3] fixed-horizon (h = 1, 2, 3 years ahead) rolling-origin comparison, cutoffs 2014–2023 (§5.3, Table 5.4) [ADD 2026-09-30]
+├── compare_same_anchor.py           [3] trend comparison from a common starting level (observed / 3-point mean / each method's own fitted level) (§5.3, Table 5.4) [ADD 2026-09-30]
+├── compute_fixed_horizon.py         [3] fixed-horizon (h = 1, 2, 3 years ahead) rolling-origin comparison, cutoffs 2014–2023 (§5.3, Table 5.5) [ADD 2026-09-30]
 ├── compare_cutoffs.py               [5] Cross-comparison over 3 cutoffs (§4)
 ├── make_calibration_recovery_figure.py  [6] Recalibration experiment for direction-reversal diseases (§6.5, Fig. 6.3)
 ├── make_paper_figures.py            [7] Generation and collection of paper figures (→ ../../sections/figures/)
@@ -104,7 +106,7 @@ backtest/
 
 Whether the reproduction ran correctly can be checked against the following representative values (`sex=total`). All of them match the tables in §5 and §6 of the paper. They are for the settings of the main results: projection started from the observed rate of the cutoff year (`base_level="observed"`), `lam_row=40`, `lam_col=20`, annual calendar grid.
 
-**Correction of 2026-09-30**: this section still carried values from the settings used before 2026-09-03 (projection started from the smoothed rate: cancer 7.17, total 7.73, DA total 84.29 and so on), which did not match the main results of the paper (referee comment A-0). The smoothed-start values are now written separately to `output/base_smoothed_cutoff_*/` and correspond to the row "own smoothed rate" of Table 5.5 of the paper.
+**Correction of 2026-09-30**: this section still carried values from the settings used before 2026-09-03 (projection started from the smoothed rate: cancer 7.17, total 7.73, DA total 84.29 and so on), which did not match the main results of the paper (referee comment A-0). The smoothed-start values are now written separately to `output/base_smoothed_cutoff_*/` and correspond to the row "own smoothed rate" of Table 5.4 of the paper.
 
 **Scale BB-D MAPE [%]** (Table 5.2 of the paper; `output[/cutoff_*]/tables/validation_summary.csv`)
 

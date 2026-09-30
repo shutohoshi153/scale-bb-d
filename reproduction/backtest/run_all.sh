@@ -47,7 +47,7 @@ for Y in 2015 2016 2017 2018 2019 2020; do
     $PY run_backtest.py --train-cutoff $Y --validation-end 2024 --output-subdir cutoff_$Y
     $PY run_baselines.py --train-cutoff $Y --validation-end 2024 --output-subdir cutoff_$Y --trend-window 15
 done
-# --- [ADD 2026-09-30] cutoff 2023 (1 年先 = 2024 のみ。固定ホライズン比較 §5.3 表 5.4 用 → output/cutoff_2023/) ---
+# --- [ADD 2026-09-30] cutoff 2023 (1 年先 = 2024 のみ。固定ホライズン比較 §5.3 表 5.5 用 → output/cutoff_2023/) ---
 $PY run_backtest.py --train-cutoff 2023 --validation-end 2024 --output-subdir cutoff_2023
 $PY run_baselines.py --train-cutoff 2023 --validation-end 2024 --output-subdir cutoff_2023 --trend-window 15
 
@@ -63,8 +63,8 @@ echo "=== [3/5] cutoff 横断比較 (→ output/cutoff_comparison/) ==="
 $PY compare_cutoffs.py
 $PY compare_base_levels.py      # [ADD 2026-09-03] 起点水準の感度表 (§5)
 $PY compute_weighted_mape.py    # [ADD 2026-09-03] 死亡数重み / 40 歳以上 MAPE (§5)
-$PY compare_same_anchor.py      # [ADD 2026-09-30] 同一起点水準でのトレンド比較 (§5.3 表 5.5)
-$PY compute_fixed_horizon.py    # [ADD 2026-09-30] 固定ホライズン (h = 1, 2, 3) の rolling-origin 比較 (§5.3 表 5.4)
+$PY compare_same_anchor.py      # [ADD 2026-09-30] 同一起点水準でのトレンド比較 (§5.3 表 5.4)
+$PY compute_fixed_horizon.py    # [ADD 2026-09-30] 固定ホライズン (h = 1, 2, 3) の rolling-origin 比較 (§5.3 表 5.5)
 
 echo ""
 echo "=== [4/6] 方向性的中率 §3.4 (→ output/directional/) ==="

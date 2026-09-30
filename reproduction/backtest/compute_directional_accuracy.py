@@ -153,6 +153,10 @@ def compute_directional(cutoff: int, subdir: str | None) -> pd.DataFrame:
     df["actual_change"] = df["actual_rate_per_100k"] - df["rate_at_cutoff"]
     df["predicted_change"] = df["predicted_rate_per_100k"] - df["rate_at_cutoff"]
     df = df.dropna(subset=["actual_change", "predicted_change", "rate_at_cutoff"])
+    # [CHG 2026-09-30] cutoff 年の観測率が 0 以下のセルは評価しない (再審査 A-5)。Scale BB-D はその年齢で
+    # 平滑化率から投影を始める (model.select_base_rates) ため、観測率 0 を基準にした方向は投影の方向
+    # (末端改善率の符号) を表さない。残るセルでは投影の起点と DA の基準水準が一致する。
+    df = df[df["rate_at_cutoff"] > 0]
     df["actual_sign"] = np.sign(df["actual_change"])
     df["pred_sign"] = np.sign(df["predicted_change"])
     df["match"] = (df["actual_sign"] == df["pred_sign"]) & (df["actual_sign"] != 0)

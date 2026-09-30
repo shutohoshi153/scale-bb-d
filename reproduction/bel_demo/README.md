@@ -79,7 +79,7 @@ bash run_all.sh            # 6 スクリプト → check_reference.py で refere
 - V2（単調性 UP50 < BASE < DN50 < ICS_T < ICS_C）: 全 MP で成立
 - V3（合成整合）: ICS_C/ICS_T = 1.09–1.11、ESR_M/BASE = 1.09–1.11（規定倍率との差は脱退相互作用分）
 - 割引カーブ: 観測 13 年限を完全再現、収束年限 60 年で瞬間フォワード = UFR ± 1bp
-- 主要結果（合計 BEL の BASE 比）: UP50 −6.7% / DN50 +7.4% / ICS_T +15.4% / ICS_C +26.5% / ESR_M +10.0%
+- 主要結果（合計 BEL の BASE 比）: UP50 −6.7% / DN50 +7.3% / ICS_T +15.3% / ICS_C +26.2% / ESR_M +9.9%
 
 ## 感度分析用の変種（2026-09-30 追加）
 
@@ -94,3 +94,7 @@ bash run_all.sh            # 6 スクリプト → check_reference.py で refere
 - 付録 A（`calc_esr_life_risk.py`）: 死亡サブリスク = ESR_M の ΔBEL、長寿・罹患障害サブリスクは 0。
 - 結果: BASE の BEL 合計 333,233 → 364,198 円（+9.3%）、ICS_T の感応度は 0.5〜1.0pp 増。旧計算の結果は `reference_output_20260903/` に残る。新旧を並べる計算は `final/review/scripts/death_benefit_reading_a6.py`。
 - 実稼働モデル（FMS）での突合（論文 §9.2）は旧計算で行ったもので、新計算では再実行していない。率表（`scn_claim_rates.csv`）の形式は同じで、ESR_M の倍率だけが変わる。
+
+## 2026-09-30 の変更（再審査 A-9）: 中央死亡率から 1 年死亡確率への換算
+
+率表（`scn_claim_rates.csv`・`scn_mortality_rates.csv`）は人口あたりの中央死亡率 m（10 万で除した値）のままとし、BEL の計算（`calc_bel_standalone.to_probabilities`）で全死因について q = 1 − exp(−m)（各年齢の 1 年間で死亡の力が一定という近似）に換算し、3 死因とその他の死因に率の比で配分する。付録 A（`calc_esr_life_risk.py`）の MOCE ランオフも同じ換算を使う。以前の q ≈ m に比べ、BASE の BEL 合計は 364,198 → 361,104 円（−0.8%）、感応度の変化は高々 0.3pp。参照出力 `reference_output_20260930/` はこの換算後の値に更新した（換算前の値は Git 履歴にある）。率表を評価モデルに直接読ませる場合、モデル側が率を確率として扱うなら同じ換算を行うこと。

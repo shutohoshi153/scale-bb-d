@@ -1,15 +1,16 @@
 {
-  "generated_at_utc": "2026-09-30T10:12:55+00:00",
-  "git_commit": "588a0adf909058d90489679697286526990b5373",
+  "generated_at_utc": "2026-09-30T11:47:58+00:00",
+  "git_commit": "82c2cbc846b78cc4da8fa753969a714160cd4ede",
   "git_dirty_files_in_package": [
     "M ICA/Paper_ICA2026/reproduction/backtest/README.en.md",
     " M ICA/Paper_ICA2026/reproduction/backtest/README.md",
+    " M ICA/Paper_ICA2026/reproduction/backtest/SCRIPTS.en.md",
+    " M ICA/Paper_ICA2026/reproduction/backtest/compute_da_inference.py",
     " M ICA/Paper_ICA2026/reproduction/backtest/compute_directional_accuracy.py",
-    " M ICA/Paper_ICA2026/reproduction/backtest/compute_rolling_origin.py",
+    " M ICA/Paper_ICA2026/reproduction/backtest/make_calibration_recovery_figure.py",
     " M ICA/Paper_ICA2026/reproduction/backtest/run_all.sh",
-    "?? ICA/Paper_ICA2026/reproduction/backtest/reference_tables/",
-    "?? ICA/Paper_ICA2026/reproduction/backtest/verify_paper_tables.py",
-    "?? ICA/Paper_ICA2026/reproduction/backtest/write_manifest.py"
+    " M ICA/Paper_ICA2026/reproduction/backtest/run_own_data.py",
+    " M ICA/Paper_ICA2026/reproduction/backtest/verify_paper_tables.py"
   ],
   "inputs": {
     "data/raw/5-15_死因_性_5歳階級_年次_死亡数率__0003411659.csv": "4eb09a13c43b76bf63493db473df537f1fe0e489fe23bc50c26072705d571982",
@@ -102,23 +103,23 @@
     },
     "directional__directional_summary_total.csv": {
       "source": "output/directional/tables/directional_summary_total.csv",
-      "sha256": "76e4e45e427c62d452f9097e2fdabc94eb99ed096aa01d442cdb10eea933ae9b"
+      "sha256": "8029dbf5bbd143b389b9d593df6ac87d17b38298f4d9eb854f2554bd29b35143"
     },
     "directional__da_inference.csv": {
       "source": "output/directional/tables/da_inference.csv",
-      "sha256": "2ffb7888ef80b932bd2e0a15448de9af42f843ac92e289e9a8252ce60502975f"
+      "sha256": "902c0d98d71ef4a0541169358d80bcdb7aac3121e9c3466c926ea9bd45b76619"
     },
     "directional__rolling_origin_da.csv": {
       "source": "output/directional/tables/rolling_origin_da.csv",
-      "sha256": "d8d1e254a80ef6883cddceaeaccda59b480fe826e914b4d3a9da22347510ce7c"
+      "sha256": "bda58e451b67f85b35c7243cbe3fcb4251db1e4cf7a673bf89580fab884cdadf"
     },
     "directional__directional_winloss.csv": {
       "source": "output/directional/tables/directional_winloss.csv",
-      "sha256": "30fd5f8d1ed024b22c813271aab3441aa7c479234c5c5b0643257c0a830ecdf0"
+      "sha256": "5313b6aa08012519d7d5d691903c3f06f491d1cd7a81fa21daa3cd7d978aa574"
     },
     "directional__calibration_recovery.csv": {
       "source": "output/directional/tables/calibration_recovery.csv",
-      "sha256": "9cfa1caf28ce041f7dbb3a287a832fd360df226b686d06f0a8b80ab773e99956"
+      "sha256": "93a6e5d515983be3948f4510c59e467b41c698009e1d228e333a63f956136ff3"
     }
   }
 }

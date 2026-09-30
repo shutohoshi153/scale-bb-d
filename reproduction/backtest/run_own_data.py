@@ -15,6 +15,10 @@ on any panel in the format of data/disease_panel_mortality.csv:
   rate_per_100k   the rate to be projected (incidence or claim rate per 100,000 exposed)
   deaths          the number of events behind the rate (optional; not used by the equal-weight fit)
 
+Zero rates: at ages whose cutoff-year rate is zero or missing the projection starts from the smoothed
+rate, and those ages are left out of the directional accuracy (paper §3.3). MAPE leaves out cells whose
+actual rate is zero. For series with many zeros, widen the age groups or aggregate first.
+
 Nothing leaves your machine: the script reads the CSV, writes to output/<name>/ and prints two tables.
 
 Usage:

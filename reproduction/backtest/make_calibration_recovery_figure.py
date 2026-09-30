@@ -23,7 +23,7 @@
 出力:
     output/directional/tables/calibration_recovery.csv
     output/directional/figures/calibration_recovery.png
-    ../../sections/figures/fig_6_3_calibration_recovery.png (論文掲載用コピー)
+    output/paper_figures/fig_6_3_calibration_recovery.png (図のコピー)
 """
 from __future__ import annotations
 
@@ -44,7 +44,9 @@ from experience_rate._scalebb_core.model import (  # noqa: E402
     project_scale_bb,
 )
 
-SECTIONS_FIGS = _paths.HERE.parents[1] / "sections" / "figures"
+# [CHG 2026-09-30] 出力先を output/paper_figures/ に変更 (make_paper_figures.py と同じ)。旧出力先の
+# Paper_ICA2026/sections/figures/ は凍結済みドラフトの図であり、公開リポジトリには存在しない。
+SECTIONS_FIGS = _paths.OUTPUT_DIR / "paper_figures"
 OUT_TABLES = _paths.OUTPUT_DIR / "directional" / "tables"
 OUT_FIGS = _paths.OUTPUT_DIR / "directional" / "figures"
 
@@ -137,6 +139,8 @@ def directional_accuracy(panel: pd.DataFrame, disease: str,
             p = rate_proj[i, pj]
             if not (pd.notna(a_act) and pd.notna(a_cut) and np.isfinite(p)):
                 continue
+            if a_cut <= 0:  # [CHG 2026-09-30] compute_directional_accuracy と同じく、cutoff 年の率が 0 以下のセルは評価しない
+                continue
             s_act = np.sign(a_act - a_cut)
             if s_act == 0:
                 continue
@@ -215,7 +219,7 @@ def main():
 
     dst = SECTIONS_FIGS / "fig_6_3_calibration_recovery.png"
     shutil.copyfile(out, dst)
-    print(f"copied -> {dst.relative_to(_paths.HERE.parents[1])}")
+    print(f"copied -> {dst}")
 
 
 if __name__ == "__main__":

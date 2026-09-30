@@ -65,8 +65,13 @@ def diagonal(S, years, x0):
     return np.array([S[AGE_LOWS.index(min(85, ((x0 + d) // 5) * 5)), yi[ISSUE + d]] / 1e5 for d in range(MAT - x0)])
 
 
-def bel(q_dis, q_other, disc):
-    # [CHG 2026-09-30] §8 と同じ死亡給付の計算: 3 死因 (q_dis) とその他の死因 (q_other) を 1 回ずつ脱退させる
+def bel(m_dis, m_other, disc):
+    # [CHG 2026-09-30] §8 と同じ死亡給付の計算: 3 死因とその他の死因を 1 回ずつ脱退させる。
+    # 中央死亡率 m を 1 年死亡確率 q に変換してから用いる (一定ハザード、死因別は率に比例配分。再審査 A-9)
+    m_tot = m_dis + m_other
+    q_tot = -np.expm1(-m_tot)
+    q_dis = np.where(m_tot > 0, q_tot * m_dis / np.where(m_tot > 0, m_tot, 1.0), 0.0)
+    q_other = q_tot - q_dis
     surv, v = 1.0, 0.0
     for t in range(len(q_dis)):
         v += disc[t] * surv * q_dis[t] * SUM_ASSURED

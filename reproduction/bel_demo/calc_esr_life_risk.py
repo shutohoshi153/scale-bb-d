@@ -40,6 +40,7 @@ from calc_bel_standalone import (
     bel_single,
     load_discount_factors,
     other_cause_rates,
+    to_probabilities,
 )
 
 # --- 告示のストレス係数(日本の地理的区分) --------------------------------
@@ -98,9 +99,10 @@ def main() -> None:
         })
 
         # MOCE パターン素材: 割引後給付 CF の年度別配列(残存割合の近似に使う)
+        p_dis, p_other = to_probabilities(q_dis, q_other)  # [ADD 2026-09-30] 率 → 確率 (bel_single と同じ)
         surv = np.concatenate([[1.0], np.cumprod(
-            np.maximum(0.0, 1.0 - q_dis - q_other - LAPSE_RATE))[:-1]])
-        cf = disc * surv * q_dis * SUM_ASSURED
+            np.maximum(0.0, 1.0 - p_dis - p_other - LAPSE_RATE))[:-1]])
+        cf = disc * surv * p_dis * SUM_ASSURED
         cf_pad = np.zeros(60)
         cf_pad[: len(cf)] = cf
         pattern_num = cf_pad if pattern_num is None else pattern_num + cf_pad

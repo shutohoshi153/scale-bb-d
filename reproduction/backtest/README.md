@@ -49,7 +49,9 @@ python run_own_data.py --panel /path/to/panel.csv --train-cutoff 2019 --validati
 | `rate_per_100k` | 投影する率（エクスポージャー 10 万あたりの発生率・支払率） |
 | `deaths` | 率の背後の件数（任意。等重みの fit では使わない） |
 
-出力は `output/<name>/tables/`（`own_data_summary.csv` に系列別の MAPE と DA）。読み方: `DA_scalebb` を `DA_majority_benchmark`（論文 §3.3）と、`MAPE_scalebb` を 3 ベースライン（論文 §5）と比べる。構造変化の前後に cutoff を置くと情報が多い（論文 §4）。シナリオ生成と BEL 評価を自社データで回す手順は `../bel_demo/README.md` の「自社データで回す場合」を参照。
+出力は `output/<name>/tables/`（`own_data_summary.csv` に系列別の MAPE と DA）。読み方: `DA_scalebb` を `DA_majority_benchmark`（論文 §3.3）と、`MAPE_scalebb` を 3 ベースライン（論文 §5）と比べる。構造変化の前後に cutoff を置くと情報が多い（論文 §4）。**率が 0 のセルの既定処理**（発生率では件数が少なく 0 が多い）: cutoff 年の率が 0 または欠測の年齢は、投影を平滑化率から始める（`select_base_rates` の既定）。その年齢は方向性的中率 DA の評価から除く（0 から測った方向は投影の方向を表さないため。論文 §3.3）。MAPE は実績率が 0 のセルを除く。0 が多い系列では、年齢階級を広げるか件数の多い系列に集約してから使うこと。
+
+シナリオ生成と BEL 評価を自社データで回す手順は `../bel_demo/README.md` の「自社データで回す場合」を参照。
 
 ---
 
@@ -66,10 +68,10 @@ backtest/
 ├── compute_da_inference.py          [4] DA の二方向（年齢 × 検証年）ブートストラップ区間、多数派ベンチマーク・loglin_trend との差 (§3.3, 表 6.1) [ADD 2026-09-30]
 ├── compute_rolling_origin.py        [4b] rolling-origin 2014–2022 の DA と MAPE 差 (§6.6, 図 6.4) [ADD 2026-09-02]。参照規則 majority_direction（窓ごとの多数派方向）、予測方向別の的中率、72 比較の勝敗表を含む [ADD 2026-09-03]
 ├── run_own_data.py                  自社の率パネルで同じ検証を実行（論文 §7.3）[ADD 2026-09-30]
-├── compare_same_anchor.py           [3] 同一起点水準（観測率 / 直近 3 点平均 / 各手法の当てはめ値）でのトレンド比較 (§5.3, 表 5.5) [ADD 2026-09-30]
-├── compute_fixed_horizon.py         [3] 固定ホライズン (h = 1, 2, 3 年先) の rolling-origin 比較、cutoff 2014–2023 (§5.3, 表 5.4) [ADD 2026-09-30]
-├── compare_base_levels.py           [5b] 投影起点の水準（観測率 / 直近 3 観測点平均 / 平滑化率）の感度表 (§5.4, 表 5.4) [ADD 2026-09-03]
-├── compute_weighted_mape.py         [5c] 死亡数重み MAPE・40 歳以上 MAPE (§5.4, 表 5.5) [ADD 2026-09-03]
+├── compare_same_anchor.py           [3] 同一起点水準（観測率 / 直近 3 点平均 / 各手法の当てはめ値）でのトレンド比較 (§5.3, 表 5.4) [ADD 2026-09-30]
+├── compute_fixed_horizon.py         [3] 固定ホライズン (h = 1, 2, 3 年先) の rolling-origin 比較、cutoff 2014–2023 (§5.3, 表 5.5) [ADD 2026-09-30]
+├── compare_base_levels.py           [5b] 投影起点の水準（観測率 / 直近 3 観測点平均 / 平滑化率）の感度表 (§5.4, 表 5.5) [ADD 2026-09-03]
+├── compute_weighted_mape.py         [5c] 死亡数重み MAPE・40 歳以上 MAPE (§5.4, 表 5.4) [ADD 2026-09-03]
 ├── compare_cutoffs.py               [5] 3 cutoff 横断比較 (§4)
 ├── make_calibration_recovery_figure.py  [6] 方向反転疾病の再キャリブレーション実験 (§6.5, 図 6.3)
 ├── make_paper_figures.py            [7] 論文掲載図の生成・収集 (→ ../../sections/figures/)
@@ -102,7 +104,7 @@ backtest/
 
 再現が正しく走ったかは、以下の代表値で確認できる（`sex=total`）。すべて論文 §5・§6 の表と一致する。値は主結果の設定（投影起点 = cutoff 年の観測率 `base_level="observed"`、`lam_row=40`・`lam_col=20`、暦年連続グリッド）によるものである。
 
-**2026-09-30 訂正**: この節には 2026-09-03 以前の設定（投影起点 = 平滑化率）の値（cancer 7.17、total 7.73、DA total 84.29 など）が残っており、論文の主結果と一致していなかった（審査指摘 A-0）。平滑化率起点の値は現在 `output/base_smoothed_cutoff_*/` に分離して出力され、論文では表 5.5 の「自身の平滑化率」行に対応する。
+**2026-09-30 訂正**: この節には 2026-09-03 以前の設定（投影起点 = 平滑化率）の値（cancer 7.17、total 7.73、DA total 84.29 など）が残っており、論文の主結果と一致していなかった（審査指摘 A-0）。平滑化率起点の値は現在 `output/base_smoothed_cutoff_*/` に分離して出力され、論文では表 5.4 の「自身の平滑化率」行に対応する。
 
 **Scale BB-D MAPE [%]**（論文 表 5.2。`output[/cutoff_*]/tables/validation_summary.csv`）
 

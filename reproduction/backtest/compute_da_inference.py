@@ -76,6 +76,16 @@ def pooled_stats(parts):
     return (hit / n * 100, maj_hit / n * 100, hit_ll / n * 100) if n else (np.nan,) * 3
 
 
+BLOCK = 3
+
+
+def moving_blocks(rng, n: int, block: int = BLOCK) -> np.ndarray:
+    """Indices of a moving-block resample of length n (blocks of `block` consecutive positions)."""
+    block = max(1, min(block, n))
+    starts = rng.integers(0, n - block + 1, size=int(np.ceil(n / block)))
+    return np.concatenate([np.arange(s, s + block) for s in starts])[:n]
+
+
 def ci(v):
     v = np.asarray(v, dtype=float)
     return float(np.nanpercentile(v, 2.5)), float(np.nanpercentile(v, 97.5))
@@ -113,6 +123,24 @@ def main() -> None:
         boot = np.array(boot)
         rows.append({"cutoff": cutoff, "series": "pooled_six", "n": int(sum(p[0].sum() for p in parts)), "DA": da, "majority": maj,
                      "DA_loglin": ll, "DA_minus_majority": da - maj, "DA_minus_loglin": da - ll,
+                     **dict(zip(["DA_lo", "DA_hi"], ci(boot[:, 0]))),
+                     "DA_yearblock_lo": np.nan, "DA_yearblock_hi": np.nan,
+                     **dict(zip(["excess_lo", "excess_hi"], ci(boot[:, 0] - boot[:, 1]))),
+                     **dict(zip(["vs_loglin_lo", "vs_loglin_hi"], ci(boot[:, 0] - boot[:, 2])))})
+        # [ADD 2026-09-30] sensitivity (re-review A-11): the five causes without the aggregate `total`,
+        # ages and years resampled as moving blocks of BLOCK adjacent groups / consecutive years, so that
+        # neighbouring ages and the consecutive shock years stay together.
+        five = [d for d in SIX if d != "total"]
+        parts = [G[d] for d in five]
+        da, maj, ll = pooled_stats(parts)
+        boot = []
+        for b in range(N_BOOT):
+            a_idx, y_idx = moving_blocks(rng, n_age), moving_blocks(rng, n_year)
+            sel = [five[k] for k in rng.integers(0, len(five), size=len(five))]
+            boot.append(pooled_stats([tuple(a[np.ix_(a_idx, y_idx)] for a in G[d]) for d in sel]))
+        boot = np.array(boot)
+        rows.append({"cutoff": cutoff, "series": "pooled_five_causes_block", "n": int(sum(p[0].sum() for p in parts)),
+                     "DA": da, "majority": maj, "DA_loglin": ll, "DA_minus_majority": da - maj, "DA_minus_loglin": da - ll,
                      **dict(zip(["DA_lo", "DA_hi"], ci(boot[:, 0]))),
                      "DA_yearblock_lo": np.nan, "DA_yearblock_hi": np.nan,
                      **dict(zip(["excess_lo", "excess_hi"], ci(boot[:, 0] - boot[:, 1]))),

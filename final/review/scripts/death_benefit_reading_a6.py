@@ -1,6 +1,6 @@
 """審査 A-6 / B-11 (2026-09-30): §8 のデモの新旧 2 つの計算を並べる.
 
-新 (現行の式 8.1・表 8.3): 3 死因による死亡を給付事由とする死亡給付。
+新 (現行の式 8.1・表 8.3): 3 死因による死亡を給付事由とする死亡給付。中央死亡率を 1 年死亡確率に変換して用いる。
     S(t+1) = S(t) · (1 − q_dis − q_other − q_lapse),  q_other = 全死因 BASE − 3 死因 BASE
     水準ストレス ESR_M = 死亡率 +12.5% (告示第 56 条) を 3 死因とその他の死因に適用。
 旧 (2026-09-03 版までの式 8.1。実稼働モデルで突合したのはこちら、§9.2): 健康事象の発現で支払う給付。
@@ -20,6 +20,20 @@ REVIEW_DIR = Path(__file__).resolve().parents[1]
 D = Path("data/processed")
 SA, LAPSE = 1_000_000.0, 0.03
 TREND = ["BASE", "UP50", "DN50", "ICS_T"]
+
+
+def to_q(m_dis, m_other):
+    """中央死亡率 → 1 年死亡確率 (一定ハザード、死因別は率に比例配分)。reproduction/bel_demo と同じ (再審査 A-9)。"""
+    m_tot = m_dis + m_other
+    q_tot = -np.expm1(-m_tot)
+    q_dis = np.where(m_tot > 0, q_tot * m_dis / np.where(m_tot > 0, m_tot, 1.0), 0.0)
+    return q_dis, q_tot - q_dis
+
+
+def bel_new(m_dis, m_other, disc):
+    """現行の式 (8.1): 死亡給付、率を確率に変換。"""
+    q_dis, q_other = to_q(m_dis, m_other)
+    return bel(q_dis, q_dis + q_other, disc)
 
 
 def bel(q_claim, q_decrement, disc):
@@ -46,9 +60,9 @@ def main() -> None:
             for scn in TREND:
                 x = q.loc[(scn, g, a)].to_numpy()
                 r[f"old_{scn}"] = bel(x, x + dth, disc)
-                r[f"new_{scn}"] = bel(x, other + x, disc)
+                r[f"new_{scn}"] = bel_new(x, other, disc)
             r["old_LEVEL"] = bel(base * 1.20, base * 1.20 + dth, disc)                 # 発生率 +20%
-            r["new_LEVEL"] = bel(base * 1.125, (other + base) * 1.125, disc)            # 死亡率 +12.5% (= ESR_M)
+            r["new_LEVEL"] = bel_new(base * 1.125, other * 1.125, disc)                    # 死亡率 +12.5% (= ESR_M)
             rows.append(r)
     t = pd.DataFrame(rows)
     tot = {"MP": "Total", **{c: t[c].sum() for c in t.columns if c.startswith(("old_", "new_"))}}

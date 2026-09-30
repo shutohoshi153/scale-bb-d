@@ -79,7 +79,7 @@ To feed your own valuation model directly, convert `scn_claim_rates.csv` from st
 - V2 (monotonicity UP50 < BASE < DN50 < ICS_T < ICS_C): holds at every model point
 - V3 (composition): ICS_C/ICS_T = 1.09–1.11, ESR_M/BASE = 1.09–1.11 (deviation from the nominal factors is the decrement interaction)
 - Discount curve: 13 observed maturities reproduced exactly; instantaneous forward at 60y within ±1 bp of the UFR
-- Headline results (total BEL vs BASE): UP50 −6.7% / DN50 +7.4% / ICS_T +15.4% / ICS_C +26.5% / ESR_M +10.0%
+- Headline results (total BEL vs BASE): UP50 −6.7% / DN50 +7.3% / ICS_T +15.3% / ICS_C +26.2% / ESR_M +9.9%
 
 ## Variant for the sensitivity analysis (added 2026-09-30)
 
@@ -94,3 +94,7 @@ The BEL calculation (Eq. 8.1 of the paper) was changed when the scope of the pap
 - Appendix A (`calc_esr_life_risk.py`): the mortality sub-risk equals the ΔBEL of ESR_M; the longevity and morbidity sub-risks are zero.
 - Result: total BASE BEL 333,233 → 364,198 yen (+9.3%); the ICS_T sensitivities rise by 0.5–1.0pp. The results of the earlier calculation remain in `reference_output_20260903/`; `final/review/scripts/death_benefit_reading_a6.py` puts the two side by side.
 - The reconciliation on the production model (FMS; §9.2 of the paper) was made with the earlier calculation and has not been repeated. The rate-table format (`scn_claim_rates.csv`) is unchanged; only the ESR_M factor differs.
+
+## Change of 2026-09-30 (re-review A-9): central death rates converted to one-year probabilities
+
+The rate tables (`scn_claim_rates.csv`, `scn_mortality_rates.csv`) stay as central death rates m per head (divided by 100,000). The BEL calculation (`calc_bel_standalone.to_probabilities`) converts them with q = 1 − exp(−m) for all causes together (a constant force of mortality within each year of age) and divides q between the three causes and the other causes in proportion to their rates; the MOCE run-off of Appendix A (`calc_esr_life_risk.py`) uses the same conversion. Against the earlier q ≈ m, the total BASE BEL moves from 364,198 to 361,104 yen (−0.8%) and no sensitivity moves by more than 0.3pp. `reference_output_20260930/` now holds the converted values (the earlier ones are in the Git history). If a valuation model reads the rate tables and treats them as probabilities, apply the same conversion there.

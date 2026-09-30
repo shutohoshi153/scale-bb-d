@@ -141,12 +141,12 @@ def check_5_3(text, rep):
 
 def check_5_4(text, rep):
     s = pd.read_csv(BASE / "cutoff_comparison" / "tables" / "fixed_horizon_summary.csv").set_index(["cutoff", "h"])
-    for row in find_table(text, "5.4"):
+    for row in find_table(text, "5.5"):
         c = int(numbers(row[0])[0][0])
         for h in (1, 2, 3):
             for j, key in ((2 * h - 1, "scalebb"), (2 * h, "best_baseline")):
                 if numbers(row[j]):
-                    rep.check(f"Table 5.4 cutoff {c} h={h} {key}", numbers(row[j])[0], s.loc[(c, h), key])
+                    rep.check(f"Table 5.5 cutoff {c} h={h} {key}", numbers(row[j])[0], s.loc[(c, h), key])
 
 
 def check_5_5(text, rep):
@@ -154,16 +154,16 @@ def check_5_5(text, rep):
     mean8 = c[c["sex"] == "total"].groupby(["anchor", "trend", "cutoff"])["MAPE"].mean()
     order = [("observed", "none"), ("observed", "loglin"), ("observed", "scalebb"), ("mean3", "none"), ("mean3", "loglin"),
              ("mean3", "scalebb"), ("fitted", "loglin"), ("fitted", "scalebb")]
-    rows = find_table(text, "5.5")
+    rows = find_table(text, "5.4")
     for (a, tr), row in zip(order, rows):
         for k, cut in enumerate(CUTOFFS):
-            rep.check(f"Table 5.5 {a}/{tr} {cut}", numbers(row[2 + k])[0], mean8[(a, tr, cut)])
+            rep.check(f"Table 5.4 {a}/{tr} {cut}", numbers(row[2 + k])[0], mean8[(a, tr, cut)])
     w = c.pivot_table(index=["cutoff", "disease", "sex"], columns=["anchor", "trend"], values="MAPE")
     for k, cut in enumerate(CUTOFFS):
         for row, x in ((rows[8], independent(w.loc[cut])), (rows[9], w.loc[cut])):  # 14 independent cells, then all 24
             got = numbers(row[2 + k])
             for j, a in enumerate(("observed", "mean3")):
-                rep.check(f"Table 5.5 cells ahead ({len(x)} cells) {a} {cut}", got[j],
+                rep.check(f"Table 5.4 cells ahead ({len(x)} cells) {a} {cut}", got[j],
                           float((x[(a, "scalebb")] < x[(a, "loglin")] - 1e-9).sum()))
 
 
@@ -245,7 +245,7 @@ def check_6_5(text, rep):
             rep.check(f"Table 6.5 {cut} default {d}", numbers(row[j])[0], s.loc[(d, cut), "dir_acc_pct"])
 
 
-CHECKS = [("05_results_point_forecast.md", [check_5_1, check_5_2, check_5_3, check_5_4, check_5_5]),
+CHECKS = [("05_results_point_forecast.md", [check_5_1, check_5_2, check_5_3, check_5_5, check_5_4]),
           ("06_results_directional_accuracy.md", [check_6_1, check_6_2, check_6_3, check_6_4, check_6_5])]
 
 
