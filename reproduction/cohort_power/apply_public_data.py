@@ -9,7 +9,9 @@ analysis; its exposure varies by cause, sex and age and is not one of the simula
 
 on 2010-2019 and 2023-2024 with death counts as weights, where C is the share of the age group
 born 1981-2000 (aged 20-39 in 2020) in 2023-2024, and reports theta with a model-based 95% interval,
-and whether the cohort regressor fits better than a regressor for attained ages 20-39.
+and whether the cohort regressor fits better than a regressor for attained ages 20-39. It also reports
+the two-sided p-value of each theta, Holm and Benjamini-Hochberg adjustments over the 14 series, and the
+same adjustments without hypertensive (classification break in 2017).
 
 Usage:  python apply_public_data.py
 Input:  ../backtest/data/disease_panel_mortality.csv (built by ../backtest/build_panel.py)
@@ -19,6 +21,7 @@ from __future__ import annotations
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from scipy.stats import binom, norm
 
 HERE = Path(__file__).resolve().parent
 PANEL = HERE.parent / "backtest" / "data" / "disease_panel_mortality.csv"
@@ -76,11 +79,41 @@ def main() -> None:
             rows.append({"cause": cause, "sex": sex, "theta": th, "lo": th - 1.96 * se, "hi": th + 1.96 * se,
                          "cohort_fits_better_than_age": sse_c < r["band"][2]})
     out = pd.DataFrame(rows)
+    # Multiplicity (third review, A-16): two-sided p from the model-based z, Holm and Benjamini-Hochberg
+    # adjustments over the 14 series, and the same without hypertensive (classification break in 2017).
+    se = (out.hi - out.lo) / (2 * 1.96)
+    out["p"] = 2 * norm.sf(np.abs(out.theta / se))
+    out["p_holm"] = holm(out.p.to_numpy())
+    out["p_bh"] = bh(out.p.to_numpy())
+    sub = out.cause != "hypertensive"
+    out["p_holm_excl_hyp"] = np.nan
+    out["p_bh_excl_hyp"] = np.nan
+    out.loc[sub, "p_holm_excl_hyp"] = holm(out.loc[sub, "p"].to_numpy())
+    out.loc[sub, "p_bh_excl_hyp"] = bh(out.loc[sub, "p"].to_numpy())
     OUT.mkdir(exist_ok=True)
     out.to_csv(OUT / "public_data_theta.csv", index=False)
     print(out.round(3).to_string(index=False))
     print(f"\ninterval excludes 0 in {int(((out.lo > 0) | (out.hi < 0)).sum())} of {len(out)} series; "
           f"cohort regressor preferred in {int(out.cohort_fits_better_than_age.sum())}")
+    print(f"P(2 or more of 14 nominal 5% tests reject | all null, independent) = {1 - binom.cdf(1, len(out), 0.05):.3f}")
+    print(f"smallest Holm-adjusted p = {out.p_holm.min():.3f}; smallest BH-adjusted p = {out.p_bh.min():.3f}; "
+          f"without hypertensive: Holm {out.p_holm_excl_hyp.min():.3f}, BH {out.p_bh_excl_hyp.min():.3f}")
+
+
+def holm(p):
+    order = np.argsort(p); m = len(p); adj = np.empty(m)
+    run = 0.0
+    for k, i in enumerate(order):
+        run = max(run, (m - k) * p[i]); adj[i] = min(1.0, run)
+    return adj
+
+
+def bh(p):
+    order = np.argsort(p)[::-1]; m = len(p); adj = np.empty(m)
+    run = 1.0
+    for k, i in enumerate(order):
+        run = min(run, p[i] * m / (m - k)); adj[i] = run
+    return adj
 
 
 if __name__ == "__main__":

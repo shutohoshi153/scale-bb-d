@@ -13,7 +13,7 @@ fitted by weighted least squares (weights = event counts) on 2010-2019 and 2023 
 years 2020-2022 are left out. C(x, y) is the share of the cell that belongs to the exposed cohorts
 (born 1981-2000) in the post-shock years, and 0 before; with 5-year age groups the share dilutes the
 signal. Detection: theta_hat above the 95th percentile of its distribution under delta = 0 for the
-same data condition (so the false-positive rate is 5% by construction). Attribution: the cohort
+same data condition, estimated on a separate null set (the false-positive rate is checked on another). Attribution: the cohort
 regressor fits better (lower weighted SSE) than an age regressor A(x, y) = share of the cell aged
 20-39 in the post-shock years, which describes a post-shock change fixed to attained age rather than
 to birth year; only a cohort can be told from that alternative, and only once the exposed band has
@@ -39,12 +39,20 @@ to all ages in 2020-2022 (-8%, -5%, +3%) + a common year effect N(0, 0.01). Even
 Poisson with variance PHI x mean (PHI = 2.5, the order of the dispersion of the public mortality panel
 under the same model, see apply_public_data.py).
 
-Usage:  python run_power.py [--reps 200]
-Outputs: output/power_long.csv (one row per replicate), output/power_summary.csv
+Replicates (third review, A-15): for every data condition, 2,000 null replicates set the detection
+threshold, an independent set of 2,000 null replicates measures the false-positive rate, and 2,000
+replicates per effect size measure power; power and attribution carry a 95% Wilson interval for the
+Monte Carlo error. Conditions run in parallel, each on its own random stream (SeedSequence.spawn).
+
+Usage:  python run_power.py [--reps 2000] [--null-reps 2000] [--workers N] [--long]
+Outputs: output/power_summary.csv (one row per condition x effect size, with Monte Carlo intervals);
+         output/power_long.csv.gz with --long (one row per replicate)
 """
 from __future__ import annotations
 import argparse
 import itertools
+import multiprocessing
+import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -159,39 +167,75 @@ def wls(r, key, n_age, years):
     return beta[-1], float(res @ res)
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--reps", type=int, default=200)
-    ap.add_argument("--seed", type=int, default=20260930)
-    args = ap.parse_args()
-    OUT.mkdir(exist_ok=True)
-    rng = np.random.default_rng(args.seed)
-    rows = []
-    for gran, post, (ename, expo), design, delta in itertools.product(("5y", "1y"), POST_YEARS, EXPOSURES.items(), ("aggregate", "tracked"), DELTAS):
-        n_age = 14 if gran == "5y" else 70
-        for rep in range(args.reps):
+def wilson(k, n, z=1.96):
+    """Wilson score interval for a binomial proportion k / n (Monte Carlo error of a simulated rate)."""
+    if n == 0:
+        return np.nan, np.nan
+    p = k / n
+    c = (p + z * z / (2 * n)) / (1 + z * z / n)
+    h = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
+    return c - h, c + h
+
+
+def run_condition(task):
+    """All replicates of one data condition. Returns one row per replicate (theta and SSE of both regressors)."""
+    (gran, post, ename, expo, design), seed, reps, null_reps = task
+    rng = np.random.default_rng(seed)
+    n_age = 14 if gran == "5y" else 70
+    out = []
+    # "null_threshold" sets the detection threshold; "null_check" is an independent null set on which the
+    # false-positive rate is measured; each delta > 0 is simulated separately.
+    plan = [("null_threshold", 0.0, null_reps), ("null_check", 0.0, reps)] + [("power", d, reps) for d in DELTAS if d > 0]
+    for role, delta, n in plan:
+        for rep in range(n):
             s = simulate(rng, delta, post, expo, design)
             r = design_rows(s, gran, design)
             th_c, sse_c = wls(r, "coh", n_age, s["years"])
             th_a, sse_a = wls(r, "age", n_age, s["years"])
-            rows.append({"granularity": gran, "post_years": post, "exposure": ename, "design": design, "delta": delta,
-                         "rep": rep, "theta_cohort": th_c, "sse_cohort": sse_c, "theta_age": th_a, "sse_age": sse_a})
-        print(f"done {gran} post={post} {ename} {design} delta={delta}", flush=True)
-    long = pd.DataFrame(rows)
-    long.to_csv(OUT / "power_long.csv", index=False)
+            out.append((gran, post, ename, design, role, delta, rep, th_c, sse_c, th_a, sse_a))
+    return out
+
+
+def summarise(long):
     summ = []
     for key, g in long.groupby(["granularity", "post_years", "exposure", "design"]):
-        null = g[g.delta == 0].theta_cohort
-        thr = null.quantile(0.95)
-        for delta, gd in g.groupby("delta"):
+        thr = g[g.role == "null_threshold"].theta_cohort.quantile(0.95)
+        for (role, delta), gd in g[g.role != "null_threshold"].groupby(["role", "delta"]):
             det = gd.theta_cohort > thr
-            attr = gd.sse_cohort < gd.sse_age
-            summ.append(dict(zip(["granularity", "post_years", "exposure", "design"], key), delta=delta,
-                             power=det.mean(), attribution=(det & attr).mean(), theta_mean=gd.theta_cohort.mean(),
-                             theta_sd=gd.theta_cohort.std(), threshold=thr))
-    s = pd.DataFrame(summ)
+            attr = det & (gd.sse_cohort < gd.sse_age)
+            n = len(gd)
+            plo, phi = wilson(int(det.sum()), n)
+            alo, ahi = wilson(int(attr.sum()), n)
+            summ.append(dict(zip(["granularity", "post_years", "exposure", "design"], key), delta=delta, n_reps=n,
+                             power=det.mean(), power_lo=plo, power_hi=phi,
+                             attribution=attr.mean(), attribution_lo=alo, attribution_hi=ahi,
+                             theta_mean=gd.theta_cohort.mean(), theta_sd=gd.theta_cohort.std(), threshold=thr))
+    return pd.DataFrame(summ)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--reps", type=int, default=2000, help="replicates per delta, and for the independent null check")
+    ap.add_argument("--null-reps", type=int, default=2000, help="null replicates used only to set the detection threshold")
+    ap.add_argument("--seed", type=int, default=20260930)
+    ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 2))
+    ap.add_argument("--long", action="store_true", help="also write one row per replicate (output/power_long.csv.gz)")
+    args = ap.parse_args()
+    OUT.mkdir(exist_ok=True)
+    conds = [(g, p, e, x, d) for g, p, (e, x), d in itertools.product(("5y", "1y"), POST_YEARS, EXPOSURES.items(), ("aggregate", "tracked"))]
+    seeds = np.random.SeedSequence(args.seed).spawn(len(conds))
+    tasks = [(c, s, args.reps, args.null_reps) for c, s in zip(conds, seeds)]
+    with multiprocessing.Pool(args.workers) as pool:
+        rows = [r for chunk in pool.imap(run_condition, tasks) for r in chunk]
+    long = pd.DataFrame(rows, columns=["granularity", "post_years", "exposure", "design", "role", "delta", "rep",
+                                       "theta_cohort", "sse_cohort", "theta_age", "sse_age"])
+    if args.long:
+        long.to_csv(OUT / "power_long.csv.gz", index=False)
+    s = summarise(long)
     s.to_csv(OUT / "power_summary.csv", index=False)
     print(s[s.delta > 0].pivot_table(index=["design", "granularity", "exposure"], columns=["post_years", "delta"], values="power").round(2).to_string())
+    print("\nfalse-positive rate on the independent null set:")
+    print(s[s.delta == 0].pivot_table(index=["design", "granularity", "exposure"], columns="post_years", values="power").round(3).to_string())
 
 
 if __name__ == "__main__":

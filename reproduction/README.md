@@ -11,7 +11,7 @@ reproduction/
 ├── backtest/        点予測精度 + 方向性的中率の検証   （§3.1 / §3.2 / §3.3 / §5 / §6）
 ├── generational/    APC世代別 予定率テーブル生成       （§3.4・付録。詳細は generational/README.md）
 ├── bel_demo/        シナリオ生成器 → 簡易プロジェクション → 感応度表（§8。詳細は bel_demo/README.md）
-└── cohort_power/    パンデミックのコホート効果の推定器: 公開データへの適用と検出力分析（§3.4 式 3.9・§7.3 表 7.2。詳細は cohort_power/README.md）
+└── cohort_power/    パンデミックのコホート効果の推定器: 公開データへの適用と検出力分析（§3.4 式 3.9・§7.3 表 7.2–7.3。詳細は cohort_power/README.md）
 ```
 
 ## 3 パッケージの分担
@@ -21,7 +21,7 @@ reproduction/
 | **`backtest/`** | バックテスト：3 cutoff × ScaleBB × 3 ベースラインの点予測 MAPE（式 3.7–3.8）と方向性的中率 DA（式 3.9–3.10） | 単体スクリプト（`run_all.sh`） | 人口動態統計 5-15 表（同梱） | `output/` 配下の検証テーブル・図 |
 | **`generational/`** | APC fit/project → 発行年別 1D 予定率テーブル（世代投影） | EAS CLI（`experience_rate`） | `mortality_apc_panel`（同梱） | `reference_output/` と突合する予定率表 |
 | **`bel_demo/`** | シナリオ別率テーブル（6 シナリオ、Phase 2 差し替え）→ BEL プロジェクション（式 8.1–8.2）→ 表 8.1・§8.2 の所要資本 | 単体スクリプト（`run_all.sh`） | `backtest/` のパネルとコアを共用、金融庁イールドカーブツール（同梱） | `output/` の感応度表・図、`reference_output/` と突合 |
-| **`cohort_power/`** | 推定器 (3.9) の 14 系列への適用と、データ条件別の検出力（表 7.2） | 単体スクリプト 2 本 | `backtest/` のパネル（なければ同梱の prebuilt） | `output/public_data_theta.csv`、`output/power_summary.csv` |
+| **`cohort_power/`** | 推定器 (3.9) の 14 系列への適用（多重性調整付き）、公開パネル自身の検出力（表 7.2）、データ構造 × 曝露規模の検出力（表 7.3） | 単体スクリプト 3 本 | `backtest/` のパネル（なければ同梱の prebuilt） | `output/public_data_theta.csv`、`output/power_summary.csv` |
 
 `backtest/` は「Scale BB が点予測に向くか」を検証し（結論：MAPE では最良ベースラインに数 pp 及ばないが方向は保持する）、
 `generational/` は「その改善率フレームワークを前向きに回して実務配布形式の率テーブルを作る」段を担い、

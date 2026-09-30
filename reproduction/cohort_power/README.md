@@ -14,25 +14,27 @@
 
 | スクリプト | 内容 | 出力 |
 |---|---|---|
-| `apply_public_data.py` | 7 死因 × 男女の 14 系列（5 歳階級 20–85、2010–2019 + 2023–2024、死亡数重み）に推定器を適用 | `output/public_data_theta.csv`（theta、95% 区間、コホート回帰子の方が良く当てはまるか） |
-| `run_power.py` | 合成データで検出力を推定。年齢粒度（5 歳 / 各歳）× ショック後年数（2 / 5 / 10）× 曝露規模（各歳あたりの人年: 全国水準 150 万 / 中間水準 / 小規模水準 1 万。中間水準は両者の間に置いた仮の値で、特定の保険会社の規模ではない）× 設計（集計 / 個人追跡）× 効果 δ（0, 0.05, 0.10, 0.20）、各 200 複製。過分散 φ = 2.5 | `output/power_long.csv`（複製ごと）、`output/power_summary.csv`（power, attribution, theta_mean, theta_sd, threshold） |
+| `apply_public_data.py` | 7 死因 × 男女の 14 系列（5 歳階級 20–85、2010・2013–2019 + 2023–2024、死亡数重み）に推定器を適用。両側 p 値と、14 系列についての Holm・Benjamini–Hochberg 調整（hypertensive を除いた場合も）を付ける | `output/public_data_theta.csv` |
+| `public_panel_power.py` | 公開パネル自身の構造（性・年齢階級別の人口、ショック前の基礎率と年齢別トレンド、年効果の標準偏差、分散比）で 14 系列をシミュレーションし、上と同じ推定器の検出力を測る（論文表 7.2） | `output/public_panel_power.csv`、`output/public_panel_structure.csv` |
+| `run_power.py` | データ構造と曝露規模を分けたグリッド（論文表 7.3）。年齢粒度（5 歳 / 各歳）× ショック後年数（2 / 5 / 10）× 曝露規模（各歳あたりの人年: 全国水準 150 万 / 中間水準 / 小規模水準 1 万。中間水準は両者の間に置いた仮の値で、特定の保険会社の規模ではない）× 設計（集計 / 個人追跡）× 効果 δ（0.05, 0.10, 0.20）。過分散 φ = 2.5 | `output/power_summary.csv`（`--long` で複製ごとの `output/power_long.csv.gz`） |
 
-検出の閾値は同じ条件の δ = 0 における theta の 95 パーセンタイル（偽陽性率 5%）。
+複製（再々審査 A-15）: 条件ごとに、帰無の 2,000 複製で検出の閾値（theta の 95 パーセンタイル）を定め、独立な帰無の 2,000 複製で偽陽性率を測り、効果の大きさごとの 2,000 複製で検出率と帰属率を測る。検出率・帰属率には 95% Wilson 区間（モンテカルロ誤差）を付ける。条件ごとに独立な乱数列（`SeedSequence.spawn`）を用い、並列に実行する。
 
 ## 実行
 
 ```bash
 cd reproduction/cohort_power
-OPENBLAS_NUM_THREADS=1 python apply_public_data.py      # 数秒
-OPENBLAS_NUM_THREADS=1 python run_power.py --reps 200   # 数十分（シード 20260930 固定）
+OPENBLAS_NUM_THREADS=1 python apply_public_data.py        # 数秒
+OPENBLAS_NUM_THREADS=1 python public_panel_power.py       # 16 コアで約 5 分（シード 20261001）
+OPENBLAS_NUM_THREADS=1 python run_power.py                # 16 コアで約 10 分（シード 20260930）
 ```
 
 入力パネルは `../backtest/data/disease_panel_mortality.csv`（`../backtest/build_panel.py` が生成）、なければ同梱の `prebuilt_disease_panel_mortality.csv` を使う。
 
 ## 自社データへの流用
 
-保険会社の罹患・追跡データでは、`apply_public_data.py` の `fit()` に罹患件数と曝露を与えれば同じ推定ができる。感染（または任意の曝露事象）の個人追跡がある場合は、ショック後のセルを曝露者と非曝露者に分け、`run_power.py` の `design="tracked"` と同じ回帰（曝露の主効果 + C × 曝露）にする。自社の件数規模に合わせて `EXPOSURES` を変えれば、必要なショック後年数の目安が得られる。
+保険会社の罹患・追跡データでは、`apply_public_data.py` の `fit()` に罹患件数と曝露を与えれば同じ推定ができる。感染（または任意の曝露事象）の個人追跡がある場合は、ショック後のセルを曝露者と非曝露者に分け、`run_power.py` の `design="tracked"` と同じ回帰（曝露の主効果 + C × 曝露）にする。自社の件数規模に合わせて `EXPOSURES` を変えれば、必要なショック後年数の目安が得られる。ただし追跡の設計は、感染者と非感染者が感染以外では同質であること（感染記録の捕捉、加入時の選択、ワクチン、脱退による交絡がないこと）を仮定している。
 
 ## 限界
 
-シミュレーションは推定器のモデル（線形の年齢別トレンド、共通の期間効果）が正しいと仮定しているため、検出力は上限と読む。曝露コホートを事前に固定しており、年齢帯を探索する場合は多重性の補正が要る（論文 §10 第 5 項）。
+シミュレーションは推定器のモデル（線形の年齢別トレンド、共通の期間効果）が正しいと仮定しているため、検出力は上限と読む。公開パネルでは、シミュレーションでの theta のばらつきは実際の標準誤差の 70–90% であり、実データの方が雑音が大きい。曝露コホートを事前に固定しており、年齢帯を探索する場合は多重性の補正が要る（論文 §10 第 5 項）。

@@ -13,7 +13,7 @@ reproduction/
 ├── backtest/        Point-forecast accuracy + directional accuracy validation   (§3.1 / §3.2 / §3.3 / §5 / §6)
 ├── generational/    APC generational assumed-rate table generation             (§3.4, Appendix; details in generational/README.md)
 ├── bel_demo/        Scenario generator → simple projection → sensitivity table   (§8; details in bel_demo/README.en.md)
-└── cohort_power/    Estimator of a pandemic cohort effect: public-data application and power analysis (§3.4 Eq. 3.9, §7.3 Table 7.2; details in cohort_power/README.md)
+└── cohort_power/    Estimator of a pandemic cohort effect: public-data application and power analysis (§3.4 Eq. 3.9, §7.3 Tables 7.2–7.3; details in cohort_power/README.md)
 ```
 
 ## Division of Roles Between the Three Packages
@@ -23,7 +23,7 @@ reproduction/
 | **`backtest/`** | Backtest: point-forecast MAPE (Eqs. 3.7–3.8) and directional accuracy DA (Eqs. 3.9–3.10) for 3 cutoffs × ScaleBB × 3 baselines | Standalone scripts (`run_all.sh`) | Vital Statistics table 5-15 (bundled) | Validation tables and figures under `output/` |
 | **`generational/`** | APC fit/project → per-issue-year 1D assumed-rate tables (generational projection) | EAS CLI (`experience_rate`) | `mortality_apc_panel` (bundled) | Assumed-rate tables to be checked against `reference_output/` |
 | **`bel_demo/`** | Scenario rate tables (6 scenarios, Phase 2 re-run only) → BEL projection (Eqs. 8.1–8.2) → Table 8.1, capital figures of §8.2 | Standalone scripts (`run_all.sh`) | Shares the panel and core with `backtest/`; FSA yield-curve tool (bundled) | Sensitivity table and figure under `output/`, checked against `reference_output/` |
-| **`cohort_power/`** | Estimator (3.9) applied to the 14 series, and power by data condition (Table 7.2) | Two standalone scripts | The `backtest/` panel (or the bundled prebuilt one) | `output/public_data_theta.csv`, `output/power_summary.csv` |
+| **`cohort_power/`** | Estimator (3.9) applied to the 14 series (with multiplicity adjustment), power of the public panel itself (Table 7.2), power by data structure × exposure (Table 7.3) | Three standalone scripts | The `backtest/` panel (or the bundled prebuilt one) | `output/public_data_theta.csv`, `output/power_summary.csv` |
 
 `backtest/` tests "whether Scale BB is suited to point forecasting" (conclusion: it trails the best baseline by a few pp on MAPE but holds the direction),
 `generational/` covers the stage of "running the improvement-rate framework forward to produce rate tables in a practice-ready distribution format,"

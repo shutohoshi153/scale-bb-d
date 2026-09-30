@@ -16,25 +16,27 @@ Fitted by WLS with event counts as weights on the pre-shock years (2010–2019) 
 
 | Script | What it does | Output |
 |---|---|---|
-| `apply_public_data.py` | Applies the estimator to the 14 series of 7 causes × men and women (5-year groups 20–85, 2010–2019 + 2023–2024, death-count weights) | `output/public_data_theta.csv` (theta, 95% interval, whether the cohort regressor fits better) |
-| `run_power.py` | Power on synthetic data: age granularity (5-year / single) × post-shock years (2 / 5 / 10) × exposure (person-years per single age: national 1.5 million / intermediate / small 10,000; the intermediate level is a hypothetical value between the two, not the size of any insurer) × design (aggregate / individual follow-up) × effect δ (0, 0.05, 0.10, 0.20), 200 replicates each, over-dispersion φ = 2.5 | `output/power_long.csv` (per replicate), `output/power_summary.csv` (power, attribution, theta_mean, theta_sd, threshold) |
+| `apply_public_data.py` | Applies the estimator to the 14 series of 7 causes × men and women (5-year groups 20–85, 2010 and 2013–2019 + 2023–2024, death-count weights), with two-sided p-values and Holm and Benjamini–Hochberg adjustments over the 14 series (also without hypertensive) | `output/public_data_theta.csv` |
+| `public_panel_power.py` | Simulates each of the 14 series with the public panel's own structure (population by sex and age group, pre-shock base rates and age trends, year-effect standard deviation, dispersion) and measures the power of the same estimator (paper Table 7.2) | `output/public_panel_power.csv`, `output/public_panel_structure.csv` |
+| `run_power.py` | A grid that separates data structure from exposure size (paper Table 7.3): age granularity (5-year / single) × post-shock years (2 / 5 / 10) × exposure (person-years per single age: national 1.5 million / intermediate / small 10,000; the intermediate level is a hypothetical value between the two, not the size of any insurer) × design (aggregate / individual follow-up) × effect δ (0.05, 0.10, 0.20), over-dispersion φ = 2.5 | `output/power_summary.csv` (with `--long`, one row per replicate in `output/power_long.csv.gz`) |
 
-The detection threshold is the 95th percentile of theta under δ = 0 for the same condition (false-positive rate 5%).
+Replicates (third review, A-15): for every condition, 2,000 null replicates set the detection threshold (95th percentile of theta), an independent 2,000 null replicates measure the false-positive rate, and 2,000 replicates per effect size measure detection and attribution, each with a 95% Wilson interval for the Monte Carlo error. Each condition runs on its own random stream (`SeedSequence.spawn`), in parallel.
 
 ## Running
 
 ```bash
 cd reproduction/cohort_power
-OPENBLAS_NUM_THREADS=1 python apply_public_data.py      # seconds
-OPENBLAS_NUM_THREADS=1 python run_power.py --reps 200   # tens of minutes (seed 20260930)
+OPENBLAS_NUM_THREADS=1 python apply_public_data.py        # seconds
+OPENBLAS_NUM_THREADS=1 python public_panel_power.py       # about 5 minutes on 16 cores (seed 20261001)
+OPENBLAS_NUM_THREADS=1 python run_power.py                # about 10 minutes on 16 cores (seed 20260930)
 ```
 
 The input panel is `../backtest/data/disease_panel_mortality.csv` (built by `../backtest/build_panel.py`), or the bundled `prebuilt_disease_panel_mortality.csv` if it is absent.
 
 ## Reuse on an insurer's own data
 
-Give `fit()` in `apply_public_data.py` the claim counts and exposure of an incidence panel to run the same estimate. With individual follow-up of infection (or any exposure event), split the post-shock cells into exposed and unexposed persons and use the regression of `design="tracked"` in `run_power.py` (a main effect of exposure plus C × exposure). Setting `EXPOSURES` to the insurer's own scale gives a guide to the number of post-shock years needed.
+Give `fit()` in `apply_public_data.py` the claim counts and exposure of an incidence panel to run the same estimate. With individual follow-up of infection (or any exposure event), split the post-shock cells into exposed and unexposed persons and use the regression of `design="tracked"` in `run_power.py` (a main effect of exposure plus C × exposure). Setting `EXPOSURES` to the insurer's own scale gives a guide to the number of post-shock years needed. The follow-up design assumes that the infected and the uninfected differ only by infection (no confounding by the capture of infection records, underwriting selection, vaccination or lapses).
 
 ## Limits
 
-The simulation assumes the estimator's model (linear age-specific trends, a common period effect) to be right, so the power figures are upper bounds. The exposed cohorts are fixed in advance; a search over age bands needs a correction for multiplicity (paper §10, item 5).
+The simulation assumes the estimator's model (linear age-specific trends, a common period effect) to be right, so the power figures are upper bounds. On the public panel the simulated spread of theta is 70–90% of the real standard errors: the real data are noisier. The exposed cohorts are fixed in advance; a search over age bands needs a correction for multiplicity (paper §10, item 5).
