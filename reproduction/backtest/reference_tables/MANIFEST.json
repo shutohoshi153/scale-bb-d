@@ -1,0 +1,124 @@
+{
+  "generated_at_utc": "2026-09-30T10:12:55+00:00",
+  "git_commit": "588a0adf909058d90489679697286526990b5373",
+  "git_dirty_files_in_package": [
+    "M ICA/Paper_ICA2026/reproduction/backtest/README.en.md",
+    " M ICA/Paper_ICA2026/reproduction/backtest/README.md",
+    " M ICA/Paper_ICA2026/reproduction/backtest/compute_directional_accuracy.py",
+    " M ICA/Paper_ICA2026/reproduction/backtest/compute_rolling_origin.py",
+    " M ICA/Paper_ICA2026/reproduction/backtest/run_all.sh",
+    "?? ICA/Paper_ICA2026/reproduction/backtest/reference_tables/",
+    "?? ICA/Paper_ICA2026/reproduction/backtest/verify_paper_tables.py",
+    "?? ICA/Paper_ICA2026/reproduction/backtest/write_manifest.py"
+  ],
+  "inputs": {
+    "data/raw/5-15_死因_性_5歳階級_年次_死亡数率__0003411659.csv": "4eb09a13c43b76bf63493db473df537f1fe0e489fe23bc50c26072705d571982",
+    "data/disease_estat_mapping.csv": "af2b1c4a03bbcb8d4c1e58a0b1b951263286770256b50a1c4139c6ce9c74fd29",
+    "data/disease_panel_mortality.csv": "ae8d600e83773dc409035be5a309b6c515653064f2121744ef91387b2dc7e223"
+  },
+  "algorithm_core": {
+    "__init__.py": "9ce8588159a7fbca0c56f8de3226d3e909560e01b0293fd9a36e8962ab13760e",
+    "apc_model.py": "c68bb945fba06edfb9bd6ef18b974a295ef2c14268ecd28f796829419b190609",
+    "disease.py": "73e9e253c2c0347cb512f16851a26b1d2504c2ad83fdc81eb09c432d56846bd7",
+    "heatmap.py": "db336435fe8237892a5c1120f67175bdb947e63599a5ba91fe50c4cac2f66d49",
+    "model.py": "37a062252d062c2cbf6f22bdd6b6911fcdd0ce6d776daa03b5eabf108d568011",
+    "panels.py": "ebdd830236932a83b4b706ba1d34a94932ab0824f6cc84fb240a9bcd754ffc81"
+  },
+  "settings": {
+    "scale_bb": {
+      "long_term_rate": 0.01,
+      "convergence_year": 2035,
+      "lam_row": 40.0,
+      "lam_col": 20.0,
+      "diff_order": 2,
+      "age_taper_start": 90,
+      "age_taper_end": 120
+    },
+    "base_level_main_results": "observed",
+    "age_range": [
+      20,
+      89
+    ],
+    "cutoffs_main": [
+      2014,
+      2021,
+      2022
+    ],
+    "cutoffs_rolling": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "loglin_trend_window_years": 15
+  },
+  "versions": {
+    "python": "3.12.3",
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "scipy": "1.17.1"
+  },
+  "reference_tables": {
+    "main__validation_summary.csv": {
+      "source": "output/tables/validation_summary.csv",
+      "sha256": "96aca013d6c59363ae72c9364c7efa658b544c12f78282ef120200e9ed90b54d"
+    },
+    "main__validation_summary_baseline.csv": {
+      "source": "output/tables/validation_summary_baseline.csv",
+      "sha256": "b2faabc7302d9ba74fec36aee628b61c2c838e0888e719728c3b84adb806331a"
+    },
+    "cutoff_2021__validation_summary.csv": {
+      "source": "output/cutoff_2021/tables/validation_summary.csv",
+      "sha256": "0fc94aaa599ff2f19c961f770463c73168efd8917d276973ee2215ece56d990d"
+    },
+    "cutoff_2021__validation_summary_baseline.csv": {
+      "source": "output/cutoff_2021/tables/validation_summary_baseline.csv",
+      "sha256": "b57e32de134623971dd89d97dd1c9cb7316ca9da0fcf142e518b9e3aa8fd9bba"
+    },
+    "cutoff_2022__validation_summary.csv": {
+      "source": "output/cutoff_2022/tables/validation_summary.csv",
+      "sha256": "5d730a30e71d2731ec0852cb733c2c2420bf2b7701046880289ac6a751fbc8d6"
+    },
+    "cutoff_2022__validation_summary_baseline.csv": {
+      "source": "output/cutoff_2022/tables/validation_summary_baseline.csv",
+      "sha256": "96d6434d6060389056415bdb98ce4ae97dd27943322b5213ed12f2a927832734"
+    },
+    "cutoff_comparison__base_level_sensitivity.csv": {
+      "source": "output/cutoff_comparison/tables/base_level_sensitivity.csv",
+      "sha256": "9e640a285ce3aecfd435188b129803929bb89981d80ca98f719ed5fc9e2c0c4b"
+    },
+    "cutoff_comparison__fixed_horizon_summary.csv": {
+      "source": "output/cutoff_comparison/tables/fixed_horizon_summary.csv",
+      "sha256": "27ad402ed8e11e79de29d21e7514dd27ff5a74188c4dbed04ec7d1371e2fa09a"
+    },
+    "cutoff_comparison__same_anchor_summary.csv": {
+      "source": "output/cutoff_comparison/tables/same_anchor_summary.csv",
+      "sha256": "63182c6425267bd881d383dc44e9d17eb3ff7ed0a67fe40f6dafba4aa56f51fe"
+    },
+    "directional__directional_summary_total.csv": {
+      "source": "output/directional/tables/directional_summary_total.csv",
+      "sha256": "76e4e45e427c62d452f9097e2fdabc94eb99ed096aa01d442cdb10eea933ae9b"
+    },
+    "directional__da_inference.csv": {
+      "source": "output/directional/tables/da_inference.csv",
+      "sha256": "2ffb7888ef80b932bd2e0a15448de9af42f843ac92e289e9a8252ce60502975f"
+    },
+    "directional__rolling_origin_da.csv": {
+      "source": "output/directional/tables/rolling_origin_da.csv",
+      "sha256": "d8d1e254a80ef6883cddceaeaccda59b480fe826e914b4d3a9da22347510ce7c"
+    },
+    "directional__directional_winloss.csv": {
+      "source": "output/directional/tables/directional_winloss.csv",
+      "sha256": "30fd5f8d1ed024b22c813271aab3441aa7c479234c5c5b0643257c0a830ecdf0"
+    },
+    "directional__calibration_recovery.csv": {
+      "source": "output/directional/tables/calibration_recovery.csv",
+      "sha256": "9cfa1caf28ce041f7dbb3a287a832fd360df226b686d06f0a8b80ab773e99956"
+    }
+  }
+}

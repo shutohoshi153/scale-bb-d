@@ -31,8 +31,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# [REPRO] Paths consolidated in the self-contained path layer
-# (originally: relative references from ROOT=parents[2])
+# [REPRO] パスは自己完結パス層に集約 (元: ROOT=parents[2] からの相対参照)
 import _paths
 
 PANEL = _paths.PANEL
@@ -131,6 +130,8 @@ def make_validation_rows(method, disease, sex, ages, val_actual, predicted_per_y
 
 def run_baselines_for(df, *, disease, sex):
     ages, years_train, rates_train, val_actual = build_panel_for(df, disease=disease, sex=sex)
+    if rates_train.size == 0:  # [ADD 2026-09-30] 該当系列なし (自社データで性別・疾病の一部が無い場合)
+        return []
 
     # naive last
     pred_last = predict_naive_last(years_train, rates_train)
@@ -202,7 +203,7 @@ def main():
     TRAIN_CUTOFF = args.train_cutoff
     VALIDATION_YEARS = list(range(TRAIN_CUTOFF + 1, args.validation_end + 1))
     TREND_WINDOW_START = TRAIN_CUTOFF - args.trend_window + 1
-    base = _paths.OUTPUT_DIR  # [REPRO] originally: ROOT/"BackTest_ScaleBB_2015_2024"/"output"
+    base = _paths.OUTPUT_DIR  # [REPRO] 元: ROOT/"BackTest_ScaleBB_2015_2024"/"output"
     if args.output_subdir:
         base = base / args.output_subdir
     TABLES = base / "tables"

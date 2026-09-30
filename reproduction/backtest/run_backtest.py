@@ -1,7 +1,7 @@
 """ScaleBB backtest: fit on data ≤ TRAIN_CUTOFF, project & validate forward.
 
 Reads the panel produced by build_panel.py and runs the vendored Scale BB core
-(KDB/src/experience_rate/_scalebb_core/model.py) per (disease, sex).
+(EAS/src/experience_rate/_scalebb_core/model.py) per (disease, sex).
 
 CLI args (all optional, defaults match the original 2014/2024 setup):
   --train-cutoff INT     last year used for training (default 2014)
@@ -27,8 +27,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# [REPRO] Paths and vendored core consolidated in the self-contained path layer
-# (originally: ROOT=parents[2], with KDB/src added to sys.path)
+# [REPRO] パス・vendorコアは自己完結パス層に集約 (元: ROOT=parents[2], EAS/src を sys.path 追加)
 import _paths
 
 from experience_rate._scalebb_core.model import (  # noqa: E402
@@ -46,12 +45,12 @@ VALIDATION_YEARS: list[int] = list(range(2015, 2025))
 OUT_TABLES: Path = _paths.OUTPUT_DIR / "tables"
 OUT_FIGS: Path = _paths.OUTPUT_DIR / "figures"
 
-# ScaleBB hyperparameters (mirrors KDB defaults in config.yaml > scalebb_presets)
+# ScaleBB hyperparameters (mirrors EAS defaults in config.yaml > scalebb_presets)
 SCALE_BB_CONFIG = dict(
     long_term_rate=0.01,
     convergence_year=2035,
     lam_row=40.0,
-    lam_col=40.0,
+    lam_col=20.0,  # [FIX 2026-09-02] 暦年グリッド化に伴い 40 → 20 (感度は小: 2014 MAPE 差 0.2pp 以内)
     diff_order=2,
     age_taper_start=90,
     age_taper_end=120,
@@ -69,6 +68,13 @@ def build_matrix(df: pd.DataFrame, *, disease: str, sex: str, year_max: int):
     piv = sub.pivot_table(
         index="age_low", columns="year", values="rate_per_100k", aggfunc="mean"
     ).sort_index()
+    # [FIX 2026-09-02] 暦年方向の差分罰則を実際の年間隔で効かせるため、年軸を
+    # 暦年の連続グリッド (1950..year_max) に reindex する。欠測年 (1951-54, ..., 2011-12)
+    # は NaN → fit_scale_bb 内で重み 0 (§3.2.1)。従来は観測列を等間隔とみなしていたため、
+    # 5 年刻み→年次の切替点で末端改善率が 3-5 倍過大になっていた。
+    if piv.empty:  # [ADD 2026-09-30] 該当系列なし (自社データで性別・疾病の一部が無い場合)。run_one が空として飛ばす
+        return np.array([], dtype=int), np.array([], dtype=int), np.empty((0, 0))
+    piv = piv.reindex(columns=range(int(piv.columns.min()), year_max + 1))
     ages = piv.index.to_numpy(dtype=int)
     years = piv.columns.to_numpy(dtype=int)
     rates = piv.to_numpy(dtype=float)
@@ -303,6 +309,12 @@ def _parse_args():
     p.add_argument("--validation-end", type=int, default=2024)
     p.add_argument("--output-subdir", type=str, default="",
                    help="subdir under output/ (e.g. 'cutoff_2021'). Empty = legacy location.")
+    # [ADD 2026-09-03] 投影起点の水準 (論文 §3.2.2 式 3.6 の m(x, y_0))。既定は観測率 (論文の記述どおり)。
+    p.add_argument("--base-level", type=str, default="observed",
+                   choices=["observed", "smoothed", "mean_obs"],
+                   help="projection base level: observed rate at cutoff (default) / Phase-1 smoothed rate "
+                        "(pre-2026-09-03 behaviour) / mean of the last --base-obs-points observation points")
+    p.add_argument("--base-obs-points", type=int, default=3)
     return p.parse_args()
 
 
@@ -311,7 +323,10 @@ def main():
     args = _parse_args()
     TRAIN_CUTOFF = args.train_cutoff
     VALIDATION_YEARS = list(range(TRAIN_CUTOFF + 1, args.validation_end + 1))
-    base = _paths.OUTPUT_DIR  # [REPRO] originally: ROOT/"BackTest_ScaleBB_2015_2024"/"output"
+    SCALE_BB_CONFIG["base_level"] = args.base_level          # [ADD 2026-09-03]
+    SCALE_BB_CONFIG["base_obs_points"] = args.base_obs_points
+    print(f"projection base level: {args.base_level} (points={args.base_obs_points})")
+    base = _paths.OUTPUT_DIR  # [REPRO] 元: ROOT/"BackTest_ScaleBB_2015_2024"/"output"
     if args.output_subdir:
         base = base / args.output_subdir
     OUT_TABLES = base / "tables"

@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: >-
   If you use this repository, please cite the paper below.
 title: >-
-  Scale BB-D — supplementary material and reproduction package for "Extending
-  Scale BB from All-Cause to Cause-Specific Mortality"
+  Scale BB-D — supplementary material and reproduction package for "Capturing
+  Long-Term Disease Trends through a Pandemic Shock"
 type: software
 authors:
   - family-names: Hoshi
@@ -13,14 +13,11 @@ license: MIT
 preferred-citation:
   type: conference-paper
   title: >-
-    Extending Scale BB from All-Cause to Cause-Specific Mortality: A Scenario
-    Generator for Disease-Contingent Insurance under Economic-Value-Based
-    Valuation (ICS/IFRS 17)
+    Capturing Long-Term Disease Trends through a Pandemic Shock: A
+    Cause-Specific Extension of Scale BB Validated by Directional Accuracy
   authors:
     - family-names: Hoshi
       given-names: Shuto
   year: 2026
   conference:
-    name: "33nd International Congress of Actuaries (ICA 2026)"
-# NOTE: complete the co-author list before tagging the release that accompanies
-# the presentation.
+    name: "33rd International Congress of Actuaries (ICA 2026)"

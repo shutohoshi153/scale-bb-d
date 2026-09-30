@@ -1,0 +1,13 @@
+rider_code,disease_id,weight,preferred_rate_type,note
+Cancer,cancer,1.0,registry,がん特約は全国がん登録の真罹患率が最高精度
+CanDiagP,cancer,1.0,registry,がん診断特約(本人型)は罹患率を直接適用
+ISSCP,cancer_with_insitu,1.0,registry,上皮内がん特約は上皮内含むがん罹患率
+AMT,cancer,1.0,registry,がん先進特約は発生率ベースで算出
+TwoCI,cancer,0.5,registry,二疾病特約(がん+急性心筋梗塞): がん側
+TwoCI,ischemic_heart,0.5,mortality,二疾病特約(がん+急性心筋梗塞): IHD側 (initial_visit or mortality)
+LDLH,heart_disease,0.4,initial_visit,生活習慣病特約: 心疾患
+LDLH,cerebrovascular,0.4,initial_visit,生活習慣病特約: 脳血管
+LDLH,hypertensive,0.2,initial_visit,生活習慣病特約: 高血圧
+MH,total,1.0,discharge,入院月次給付特約は入院発生率 (全疾病)
+LSH,total,1.0,discharge,入院一時給付特約は入院発生率 (全疾病)
+CLH,total,1.0,discharge,長期入院特約は入院発生率 (全疾病)

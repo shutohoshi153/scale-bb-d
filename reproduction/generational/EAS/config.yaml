@@ -1,0 +1,100 @@
+# Experience Rate Analysis System - Configuration
+
+database:
+  # SQLite database file path (relative to project root)
+  path: "experience_rate.db"
+
+parameters:
+  # 観察年度の締め月 (1-12)
+  observation_year_end_month: 3
+  # 事業年度の締め月 (1-12)
+  fiscal_year_end_month: 9
+
+paths:
+  # 出力ディレクトリ
+  output: "output"
+  # 加工済みパネル置場 (疾病発生率系)
+  processed: "data/processed"
+  # e-Stat 生データ置場
+  row_data: "data/RowData"
+
+# 疾病発生率推計のパラメータ
+incidence:
+  # 初診フロー (rate_type='initial_visit') の年換算係数
+  #   Z70 の外来初診受療率は「調査日1日あたりの人口10万対」。
+  #   年間発生率への換算: rate_per_100k × annual_conversion_days / 100,000
+  #   目安: 年間平日診療日数ベースでは 240 前後。
+  initial_visit_annual_days: 240
+  # 同じ疾病で年内に複数回「初診」となる率の逆数による補正
+  #   1.0 = 補正なし、0.7 = 30% 減 (重複初診を除外)
+  initial_visit_duplicate_adjust: 0.7
+  # 退院フロー (rate_type='discharge') 用: 年間日数
+  discharge_annual_days: 365
+  # 一般病床の平均在院日数 (H20-47 不明時のフォールバック, 日)
+  los_default: 33.3
+
+# -----------------------------------------------------------------------------
+# Scale BB / APC 拡張モデルの推奨パラメータプリセット
+# -----------------------------------------------------------------------------
+# CLI から --preset <name> で参照される。未指定の値は CLI の既定値を使う。
+# プリセットは疾病・性別・運用目的別に上書き階層構造をもつ:
+#
+#   scalebb_presets.defaults                 : 全体デフォルト
+#   scalebb_presets.diseases.<disease>       : 疾病別オーバーライド
+#   scalebb_presets.sex.<sex>                : 性別オーバーライド
+#   scalebb_presets.generational             : Generational Projection 設定
+#
+# マージ優先順位: defaults → diseases → sex (後勝ち)
+# -----------------------------------------------------------------------------
+scalebb_presets:
+  defaults:
+    # 平滑化パラメータ (λ) - 大きいほど滑らか。Scale BB 原典は 40 前後
+    #   20-39 歳は率が小さく年次変動が相対的に大きいため、暦年方向は強めに
+    lam_row: 40.0        # 年齢方向 (age)
+    lam_col: 60.0        # 暦年方向 (period)  ※若年ノイズ抑制のため 40→60
+    lam_cohort: 40.0     # コホート方向 (APC のみ有効)
+    # 長期率と収束年 (原典 2.4 節)
+    long_term_rate: 0.01
+    convergence_year: 2035
+    horizon_year: 2100    # 20 歳加入 × 到達 85 歳まで追跡 (2100 あれば余裕)
+    # 年齢範囲 (mortality_apc_panel は 5 歳階級で 20-85 が有効)
+    #   20 歳まで下げることで若年層向け保険商品にも対応
+    age_min: 20
+    age_max: 85
+    # COVID-19 期の扱い (APC のみ)
+    covid_mode: dummy         # 'dummy' / 'weight_down' / 'none'
+    covid_years: [2020, 2021, 2022]
+    covid_weight: 0.3         # weight_down 時の重み係数
+    # コホート外挿戦略 (APC のみ)
+    cohort_extrapolation: last_drift   # 'flat' or 'last_drift'
+
+  # 疾病別オーバーライド (research の backtest 結果に基づく推奨)
+  diseases:
+    cancer:
+      # がんは COVID 期の影響が最も大きい (受診控え → 2020-2022 で観測値低下)
+      covid_mode: dummy
+    heart_disease:
+      covid_mode: dummy
+    cerebrovascular:
+      # 脳血管疾患は COVID 期以前からの低下トレンドが強いので弱めの λ_cohort
+      covid_mode: dummy
+      lam_cohort: 20.0
+
+  # 性別オーバーライド (現状はデフォルト踏襲)
+  sex:
+    total: {}
+    male: {}
+    female: {}
+
+  # Generational Projection (下流配布用 1D テーブル) の設定
+  generational:
+    # デフォルトの発行年レンジ (scalebb-gen-table --preset で使用)
+    issue_years: [2024, 2025, 2026, 2027, 2028]
+    # 契約時年齢 (0 = 新生児商品、20 = 若年層商品、40 = 大人向け商品)
+    issue_age: 20
+    # 出力対象の年齢範囲 (単年齢) - 若年商品で 20 歳から追跡
+    age_min: 20
+    age_max: 85
+    # 単年齢補間 (mortality_apc_panel が 5 歳階級のため推奨 true)
+    interpolate_age: true
+    interpolation_method: log_linear   # 'log_linear' / 'linear' / 'log_pchip'

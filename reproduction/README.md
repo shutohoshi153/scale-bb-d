@@ -1,74 +1,72 @@
-# reproduction — §3 reproduction packages
+**日本語** | [English](README.en.md)
 
-This directory packages the validation pipeline of paper §3 ("Data and
-Methodology") in a form that can be re-run and verified standalone. It
-consists of **two complementary packages** that together cover all of §3.
+# reproduction — §3 再現パッケージ群（査読者・共著者向け）
 
-Section numbers (§) refer to the paper distributed by the ICA 2026 organisers;
-the manuscript itself is not part of this repository.
+論文 §3「データと手法」の検証パイプラインと、§8「付帯的確認（BEL 感応度デモ）」を、単体で再現検証できる形にまとめたディレクトリ。
+**3 つの相補的なパッケージ**からなり、公開データ → フィット・検証 → シナリオ別率テーブル → プロジェクション・感応度表、という一本の経路をカバーする。
 
 ```
 reproduction/
-├── README.md        ← this file (division of work and consistency)
-├── backtest/        point-forecast accuracy + directional accuracy   (§3.1 / §3.2 / §3.4 / §5 / §6)
-└── generational/    APC generational assumed-rate table pipeline     (§3.3)
+├── README.md        ← 本ファイル（分担と整合性の説明）
+├── backtest/        点予測精度 + 方向性的中率の検証   （§3.1 / §3.2 / §3.3 / §5 / §6）
+├── generational/    APC世代別 予定率テーブル生成       （付録 B。詳細は generational/README.md）
+└── bel_demo/        シナリオ生成器 → 簡易プロジェクション → 感応度表（§8・付録 A。詳細は bel_demo/README.md）
 ```
 
-## Division of work
+## 3 パッケージの分担
 
-| Package | Reproduces | Runner | Input | Main output |
+| パッケージ | 再現対象 | 実行系 | 入力 | 主な出力 |
 |---|---|---|---|---|
-| **`backtest/`** | Backtest: 3 cutoffs × Scale BB-D × 3 baselines — point-forecast MAPE (eqs. 3.9–3.10) and directional accuracy DA (eqs. 3.11–3.12) | standalone scripts (`run_all.sh`) | Vital Statistics table 5-15 (bundled) | validation tables and figures under `output/` |
-| **`generational/`** | APC fit/projection → per-issue-year 1D assumed-rate tables (generational projection) | `experience_rate` CLI | `mortality_apc_panel` (bundled) | assumed-rate tables checked against `reference_output/` |
+| **`backtest/`** | バックテスト：3 cutoff × ScaleBB × 3 ベースラインの点予測 MAPE（式 3.7–3.8）と方向性的中率 DA（式 3.9–3.10） | 単体スクリプト（`run_all.sh`） | 人口動態統計 5-15 表（同梱） | `output/` 配下の検証テーブル・図 |
+| **`generational/`** | APC fit/project → 発行年別 1D 予定率テーブル（世代投影） | EAS CLI（`experience_rate`） | `mortality_apc_panel`（同梱） | `reference_output/` と突合する予定率表 |
+| **`bel_demo/`** | シナリオ別率テーブル（6 シナリオ、Phase 2 差し替え）→ BEL プロジェクション（式 8.1–8.2）→ 表 8.3・図 8.1・表 A.1 | 単体スクリプト（`run_all.sh`） | `backtest/` のパネルとコアを共用、金融庁イールドカーブツール（同梱） | `output/` の感応度表・図、`reference_output/` と突合 |
 
-`backtest/` tests whether Scale BB-D is suitable for point forecasts
-(conclusion: it loses on MAPE but gets the direction right), while
-`generational/` runs the same improvement-rate framework forward to produce
-assumed-rate tables in the format used in practice. The scopes do not overlap.
+`backtest/` は「Scale BB が点予測に向くか」を検証し（結論：MAPE では最良ベースラインに数 pp 及ばないが方向は保持する）、
+`generational/` は「その改善率フレームワークを前向きに回して実務配布形式の率テーブルを作る」段を担い、
+`bel_demo/` は「率テーブルを評価モデルに流して規制シナリオの感応度表にする」段を担う。
+スコープは重複しない。
 
-## Consistency between the two packages (verified)
+## 両パッケージの整合性（検証済み・2026-07-22）
 
-1. **Identical algorithm core.** `backtest/vendor/experience_rate/_scalebb_core/`
-   and `generational/KDB/src/experience_rate/_scalebb_core/` are identical
-   copies. Both packages use the same Scale BB / APC implementation
-   (§3.2 eqs. 3.1–3.6, §3.3 eqs. 3.7–3.8).
-2. **Identical input mortality data.** Both start from the cause-specific
-   mortality rates of the e-Stat Vital Statistics; shared cells
-   (cancer / cerebrovascular / heart / hypertensive / total) match exactly.
-3. **Common two-layer framing of the data.** Cause-specific mortality is used
-   (i) as a proxy for medical-insurance incidence rates and (ii) as the direct
-   assumption for disease-contingent death benefits (§3.1.3).
-4. **Common core hyperparameters.** `long_term_rate=0.01`,
-   `convergence_year=2035`, `lam_row=40`, `diff_order=2`.
+共有ディレクトリとして矛盾がないことを以下で確認済み。
 
-### Setting differences (by use case, not contradictions)
+1. **アルゴリズムコアが同一**：`backtest/vendor/experience_rate/_scalebb_core/` と
+   `generational/EAS/src/experience_rate/_scalebb_core/` は**ビット一致**（現行 EAS とも一致）。
+   両パッケージは同一の Scale BB / APC 実装（§3.2 式 3.1–3.6、付録 B 式 B.1–B.2）を使う。
+2. **入力死亡率データが同一**：両者とも e-Stat 人口動態統計の死因別死亡率が起点。
+   共有セル（cancer / cerebrovascular / heart / hypertensive / total）で**完全一致**（差 0）を確認。
+3. **データの位置づけが共通**：死因別死亡率は特定疾病死亡保障の対象そのものであり、論文の主張はこの適用に限る
+   （2026-09-30 改訂。医療保険の発生率は本論文では取り扱わず、保険会社は `backtest/run_own_data.py` を流用して自社実績で確認できる）（§3.1.3・generational README §1）。
+4. **中核ハイパーパラメータが共通**：`long_term_rate=0.01`、`convergence_year=2035`、
+   `lam_row=40`、`diff_order=2`。
 
-| Item | `backtest/` | `generational/` | Note |
+### 設定・表記の差（矛盾ではなく用途差）
+
+| 項目 | `backtest/` | `generational/` | 備考 |
 |---|---|---|---|
-| `lam_col` (calendar-year smoothing) | 40 | 60 | backtest follows the KDB default; generational uses 60 to suppress noise at young ages under the age20 preset (§3.2.3 footnote) |
-| Age range | 20–89 | 20–85 (age20 preset) | minor, setting-dependent difference |
+| `lam_col`（暦年方向平滑化） | 20 | 60 | [2026-09-30 訂正: 40 と誤記していた。本文 §3.2.3・`run_backtest.py` の `SCALE_BB_CONFIG` のとおり 20。設定の正は `backtest/output/MANIFEST.json` の `settings`] backtest は暦年連続グリッド化（2026-09-02）に伴い 40 → 20。generational は age20 移行で若年ノイズ抑制のため 60。各々の用途で正当（§3.2.3 脚注参照） |
+| 年齢範囲 | 20–89 | 20–85（age20 プリセット） | 設定依存の軽微差 |
 
-> Both packages use the same disease slug `heart_disease`
-> (code Hi05, heart disease excluding hypertensive).
+> 疾病スラグは両パッケージとも `heart_disease`（Hi05・心疾患・高血圧性除く）で統一済み。
 
-## Usage
+## 使い方
 
 ```bash
-# Backtest (regenerates all artifacts in a few minutes)
+# バックテスト（数分で全成果物を再生成）
 cd backtest && bash run_all.sh
 
-# Generational assumed-rate tables (CLI; details in generational/README.md)
-cd generational/KDB && python -m venv .venv && source .venv/bin/activate
+# 世代別予定率テーブル（EAS CLI。詳細は generational/README.md §3–4）
+cd generational/EAS && python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt && export PYTHONPATH=src
 python -m experience_rate scalebb-apc-fit --source mortality --sex male \
   --disease cancer heart_disease cerebrovascular --use-preset --run-id male_repro
 ```
 
-For details, expected reference numbers and the list of modifications relative
-to the research-side scripts, see `backtest/README.md` and
-`generational/README.md`.
+各パッケージの詳細・期待される主要数値・改変点は、それぞれの `backtest/README.md` /
+`generational/README.md` を参照。
 
-## Data sources
+## データ出典
 
-Citations and terms of use for the bundled third-party data are collected in
-`../DATA_SOURCES.md`.
+両パッケージが同梱する第三者提供データ（人口動態調査・患者調査 / e-Stat、全国がん登録 /
+国立がん研究センター、標準生命表 / 日本アクチュアリー会）の出典表記と利用条件は
+`../DATA_SOURCES.md` に集約する。

@@ -1,33 +1,29 @@
-"""Figure 6.3 — Calibration-recovery figure for trend-reversal diseases (liver / hypertensive).
+"""図 6.3 — 方向反転疾病 (liver / hypertensive) のキャリブレーション回復図.
 
-Purpose:
-    Show §6.5 ("handling diseases whose direction reverses") in a single
-    figure. For liver / hypertensive, whose direction is almost always missed
-    at cutoff = 2014, compare directional accuracy DA (eq. 3.11-3.12,
-    sex = total) across the following 5 settings:
+目的:
+    §6.5 の「方向性が反転する疾病の扱い」を 1 枚の図で示す。cutoff = 2014 で
+    方向をほぼ外す liver / hypertensive について、方向一致率 DA (式 3.11-3.12,
+    sex = total) を次の 5 設定で比較する:
 
-      (1) cutoff 2014, default        (L = +1%, P = 2035)  ... restates §6.1
-      (2) cutoff 2014, recalibrated A (L = 0%,  P = 2035)  ... L swap only
-      (3) cutoff 2014, recalibrated B (L = 0%,  P = 2020)  ... plus earlier convergence year
-      (4) cutoff 2021, default                             ... recent reversal enters training
-      (5) cutoff 2022, default                             ... same, one more year
+      (1) cutoff 2014・既定       (L = +1%, P = 2035)      … §6.1 の再掲
+      (2) cutoff 2014・再設定 A   (L = 0%,  P = 2035)      … L 差し替えのみ
+      (3) cutoff 2014・再設定 B   (L = 0%,  P = 2020)      … 収束年の前倒し併用
+      (4) cutoff 2021・既定                                … 直近反転を学習に反映
+      (5) cutoff 2022・既定                                … 同上 (さらに 1 年)
 
-    (2)(3) correspond to the "calibration channel" (re-setting L and P per
-    disease); (4)(5) to the "data channel" (folding the recent trend into the
-    training data).
+    (2)(3) が「キャリブレーション経路」(疾病別に L・P を再設定する)、
+    (4)(5) が「データ経路」(直近トレンドを学習データに取り込む) に対応する。
 
-Input:
-    data/disease_panel_mortality.csv (falls back to the bundled prebuilt_*
-    if absent).
-    Note: does NOT depend on existing artifacts under output/ (DA is
-    recomputed here for all settings). The default-setting values match the
-    output of compute_directional_accuracy.py
-    (output/directional/tables/directional_summary_total.csv).
+入力:
+    data/disease_panel_mortality.csv (無ければ同梱の prebuilt_* にフォールバック)
+    ※ output/ の既存成果物には依存しない (DA は本スクリプト内で全設定を再計算)。
+       既定設定の値は compute_directional_accuracy.py の出力
+       (output/directional/tables/directional_summary_total.csv) と一致する。
 
-Output:
+出力:
     output/directional/tables/calibration_recovery.csv
     output/directional/figures/calibration_recovery.png
-    ../../figures/fig_6_3_calibration_recovery.png (committed copy)
+    ../../sections/figures/fig_6_3_calibration_recovery.png (論文掲載用コピー)
 """
 from __future__ import annotations
 
@@ -48,7 +44,7 @@ from experience_rate._scalebb_core.model import (  # noqa: E402
     project_scale_bb,
 )
 
-SECTIONS_FIGS = _paths.HERE.parents[1] / "figures"
+SECTIONS_FIGS = _paths.HERE.parents[1] / "sections" / "figures"
 OUT_TABLES = _paths.OUTPUT_DIR / "directional" / "tables"
 OUT_FIGS = _paths.OUTPUT_DIR / "directional" / "figures"
 
@@ -57,17 +53,16 @@ VALIDATION_END = 2024
 DISEASES = ["liver", "hypertensive"]
 SEX = "total"
 
-# Common hyperparameters, identical to run_backtest.py (§3.2.3).
-# L / P / cutoff are varied per setting.
+# run_backtest.py と同一の共通ハイパーパラメータ (§3.2.3)。L / P / cutoff を振る。
 COMMON_CFG = dict(
     lam_row=40.0,
-    lam_col=40.0,
+    lam_col=20.0,  # [FIX 2026-09-02] 暦年グリッド化に伴い 40 → 20 (感度は小: 2014 MAPE 差 0.2pp 以内)
     diff_order=2,
     age_taper_start=90,
     age_taper_end=120,
 )
 
-# (label, cutoff, long_term_rate, convergence_year)
+# (ラベル, cutoff, long_term_rate, convergence_year)
 SETTINGS = [
     ("2014_default", 2014, 0.01, 2035),
     ("2014_L0", 2014, 0.00, 2035),
@@ -94,17 +89,18 @@ def build_matrix(panel: pd.DataFrame, disease: str, year_max: int):
     ]
     piv = sub.pivot_table(index="age_low", columns="year",
                           values="rate_per_100k", aggfunc="mean").sort_index()
+    # [FIX 2026-09-02] 年軸を暦年の連続グリッドに reindex (欠測年は NaN → 重み 0)。run_backtest.py::build_matrix と同じ修正。
+    piv = piv.reindex(columns=range(int(piv.columns.min()), year_max + 1))
     return (piv.index.to_numpy(int), piv.columns.to_numpy(int),
             piv.to_numpy(float))
 
 
 def directional_accuracy(panel: pd.DataFrame, disease: str,
                          cutoff: int, L: float, P: int) -> tuple[int, float]:
-    """Fit/project under the given setting and return DA (eq. 3.11-3.12).
+    """指定設定で fit/project し、DA (式 3.11-3.12) を返す。
 
-    Definition identical to compute_directional_accuracy.py:
-    changes are measured against the observed rate in the cutoff year, and
-    cells with zero actual change are excluded from evaluation.
+    定義は compute_directional_accuracy.py と同一:
+    変化量の基準は cutoff 年の観測率、実績変化 0 のセルは評価対象外。
     """
     ages, years, rates = build_matrix(panel, disease, cutoff)
     cfg = ScaleBBConfig(
@@ -167,9 +163,9 @@ def main():
     res.to_csv(OUT_TABLES / "calibration_recovery.csv", index=False)
     print(f"wrote {OUT_TABLES / 'calibration_recovery.csv'}")
 
-    # ---------- Plotting ----------
-    # Color = cutoff (same palette as scalebb_directional_per_cutoff.png);
-    # hatch = recalibration settings at cutoff 2014 (distinguished by texture)
+    # ---------- 作図 ----------
+    # 色 = cutoff (scalebb_directional_per_cutoff.png と同じ配色)、
+    # ハッチ = cutoff 2014 の再キャリブレーション設定 (テクスチャで区別)
     styles = {
         "2014_default": dict(color="#d62728", hatch="",
                              label="cutoff 2014, default (L=+1%)"),

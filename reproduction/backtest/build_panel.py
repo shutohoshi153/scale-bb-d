@@ -1,45 +1,39 @@
-"""Build an age x year mortality panel for each disease of the study (§3.1).
+"""Build age x year mortality panel for each disease in disease_estat_mapping.csv.
 
-Source: data/raw/estat_5-15_deaths_by_cause_sex_age_0003411659.csv — e-Stat
-table 5-15 (deaths and death rates by cause of death, sex, 5-year age group
-and year ["死因_性_5歳階級_年次_死亡数率"], 1950-2024).
+Source: ScaleBB_Research/data/raw/estat_processed/vital_statistics/5-15_*
+(死因_性_5歳階級_年次_死亡数率, 1950-2024).
 
-Output: data/disease_panel_mortality.csv
+Output: BackTest_ScaleBB_2015_2024/data/disease_panel_mortality.csv
         columns: disease_id, sex, year, age_low, age_high, rate_per_100k, deaths
 """
 from __future__ import annotations
 import pandas as pd
 
-# [REPRO] Paths consolidated in the self-contained path layer
-# (originally: relative references from ROOT=parents[2])
+# [REPRO] パスは自己完結パス層に集約 (元: ROOT=parents[2] からの相対参照)
 import _paths
 
 SRC = _paths.RAW_VITAL_CSV
+MAPPING = _paths.DISEASE_MAPPING
 OUT_DIR = _paths.DATA_DIR
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# disease_id -> cause-of-death trend classification code ("死因年次推移分類_code",
-# Hi-code in table 5-15).
-# The trend classification was revised in 2017; for malignant neoplasms
-# (Hi02 -> Hi022017) and hypertensive diseases (Hi04 -> Hi042017), the entire
-# 1950-2024 period is stored under the 2017-revision codes.
+# disease_id -> 死因年次推移分類_code (Hi-code in 5-15).
+# 2017年に死因年次推移分類が改定されており、悪性新生物(Hi02→Hi022017)・
+# 高血圧性疾患(Hi04→Hi042017) は 1950-2024 全期間が 2017版コードに格納される。
 DISEASE_TO_HICODE = {
     "cancer": "Hi022017",
     "diabetes": "Hi03",
     "hypertensive": "Hi042017",
-    "heart_disease": "Hi05",  # heart diseases (excl. hypertensive). Common slug across the paper and both reproduction packages
+    "heart_disease": "Hi05",  # 心疾患(高血圧性を除く)。論文・両再現パッケージで共通スラグ
     "cerebrovascular": "Hi06",
     "liver": "Hi11",
-    "kidney": "Hi12",  # renal failure (closest 5-15 category; includes glomerular diseases etc.)
+    "kidney": "Hi12",  # 腎不全 (糸球体疾患等を含む 5-15 上の最も近い区分)
     "total": "Hi00",
 }
 
-# heart_ischemic (ischaemic heart diseases) is NOT in the cause-of-death trend
-# classification; it appears only in the condensed cause-of-death list (5-28),
-# which lacks 5-year age groups. We skip it here and note in the README.
+# heart_ischemic (虚血性心疾患) is NOT in 死因年次推移分類; only in 死因簡単分類 (5-28)
+# which lacks 5歳階級. We skip it here and note in the README.
 
-# Japanese age-group labels as they appear in the e-Stat CSV (data-facing;
-# keys must stay byte-identical). "総数" = all ages, "不詳" = age unknown.
 AGE_LABEL_TO_LOW = {
     "総数": None,
     "0～4歳": 0,
@@ -74,27 +68,25 @@ def main():
     print(f"loaded {len(raw):,} rows")
     print("years range:", raw["時間軸(年次)"].min(), "→", raw["時間軸(年次)"].max())
 
-    # Filter on tabulated item ("表章項目"): "死亡数" = deaths,
-    # "死亡率" = death rate (per 100k population)
+    # Filter: 表章項目=死亡率 (人口10万対)
     deaths = raw[raw["表章項目"] == "死亡数"].copy()
     rate = raw[raw["表章項目"] == "死亡率"].copy()
 
-    # Sex column ("性別") -> sex slug ("総数"=total, "男"=male, "女"=female)
+    # 性別 -> sex slug
     sex_map = {"総数": "total", "男": "male", "女": "female"}
     rate["sex"] = rate["性別"].map(sex_map)
     deaths["sex"] = deaths["性別"].map(sex_map)
 
-    # Age column ("年齢(5歳階級)", 5-year groups) -> age_low
-    # (use label for stability across encodings)
+    # 年齢 -> age_low (use label for stability across encodings)
     rate["age_low"] = rate["年齢(5歳階級)"].map(AGE_LABEL_TO_LOW)
     deaths["age_low"] = deaths["年齢(5歳階級)"].map(AGE_LABEL_TO_LOW)
 
-    # Year column ("時間軸(年次)") -> int (strip the "年" [year] suffix)
+    # 年次 -> int
     rate["year"] = rate["時間軸(年次)"].str.replace("年", "").astype(int)
     deaths["year"] = deaths["時間軸(年次)"].str.replace("年", "").astype(int)
 
-    # Cause of death -> disease_id
-    # "死因年次推移分類_code" looks like "Hi02" / "Hi00" (Hi00 = all causes)
+    # 死因 -> disease_id
+    # 死因年次推移分類_code looks like "Hi02" / "Hi00" (Hi00 = 総数)
     print("sample hi codes:", rate["死因年次推移分類_code"].unique())
 
     rate["hi_code"] = rate["死因年次推移分類_code"].astype(str)

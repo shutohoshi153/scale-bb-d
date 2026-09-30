@@ -1,23 +1,23 @@
-"""Generate and collect the figures that appear in the paper.
+"""論文本文 (sections/) に掲載する図の生成・収集.
 
-Does two jobs:
+2 つの仕事をする:
 
-  1. Newly generate the explanatory figures for §3 and §4:
-       fig_3_1_input_panel_overview.png      input panel overview (§3.1)
-       fig_3_2_smoothing_before_after.png    smoothing before/after (§3.2.1, eq. 3.1-3.2)
-       fig_3_3_blend_schematic.png           improvement-rate blending example (§3.2.2, eq. 3.5)
-       fig_4_1_backtest_design.png           3-cutoff design schematic (§4.2)
-  2. Collect the backtest result figures referenced by §5 from output/
-       (output/ is not under git control, so the figures that appear in the
-        paper are committed to figures/; if an output/ figure has not been
-        generated yet, warn and skip).
+  1. 本文 §3・§4 用の説明図を新規生成する
+       fig_3_1_input_panel_overview.png      入力パネルの概観 (§3.1)
+       fig_3_2_smoothing_before_after.png    平滑化前後の比較 (§3.2.1, 式 3.1–3.2)
+       fig_3_3_blend_schematic.png           改善率ブレンドの実例 (§3.2.2, 式 3.5)
+       fig_4_1_backtest_design.png           3 cutoff 設計の模式図 (§4.2)
+  2. §5 が参照するバックテスト成果図を output/ から収集する
+       (output/ は git 管理外のため、本文が参照する図は sections/figures/ に
+        コミットする。output/ 側が未生成の場合は警告してスキップ)
 
-All outputs go to figures/ at the repository root.
-Run as the final step of run_all.sh (standalone execution also works).
+出力先はいずれも reproduction/backtest/output/paper_figures/（2026-09-02 変更。旧: Paper_ICA2026/sections/figures/）。
+run_all.sh の最終ステップとして実行される (単体実行も可)。
 """
 from __future__ import annotations
 
 import shutil
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -34,17 +34,22 @@ from experience_rate._scalebb_core.model import (  # noqa: E402
     project_scale_bb,
 )
 
-# Destination for the paper-body figures (committed to git)
-SECTIONS_FIGS = _paths.HERE.parents[1] / "figures"
+# 本文図の置き場 (コミット対象)
+# [CHANGE 2026-09-02] 出力先を output/paper_figures/ に変更。旧既定の Paper_ICA2026/sections/figures/ は
+# 共著者と共有済みのドラフト版（凍結）であり、再実行で上書きしない。論文（final/sections/figures/）へは
+# 明示的にコピーする（final/README.md のビルド手順参照）。旧挙動は環境変数 PAPER_FIG_DIR で指定可。
+import os
+SECTIONS_FIGS = Path(os.environ["PAPER_FIG_DIR"]) if os.environ.get("PAPER_FIG_DIR") else _paths.OUTPUT_DIR / "paper_figures"
+SECTIONS_FIGS.mkdir(parents=True, exist_ok=True)
 
 AGE_MIN, AGE_MAX = 20, 89
 
-# Hyperparameters identical to run_backtest.py (§3.2.3)
+# run_backtest.py と同一のハイパーパラメータ (§3.2.3)
 SCALE_BB_CONFIG = dict(
     long_term_rate=0.01,
     convergence_year=2035,
     lam_row=40.0,
-    lam_col=40.0,
+    lam_col=20.0,  # [FIX 2026-09-02] 暦年グリッド化に伴い 40 → 20 (感度は小: 2014 MAPE 差 0.2pp 以内)
     diff_order=2,
     age_taper_start=90,
     age_taper_end=120,
@@ -52,8 +57,7 @@ SCALE_BB_CONFIG = dict(
 
 
 def load_panel() -> pd.DataFrame:
-    # Fall back to the bundled reference panel so this also works
-    # when build_panel.py has not been run
+    # build_panel.py 未実行でも動くよう、同梱の照合用パネルへフォールバック
     path = _paths.PANEL if _paths.PANEL.exists() else (
         _paths.DATA_DIR / "prebuilt_disease_panel_mortality.csv"
     )
@@ -61,7 +65,7 @@ def load_panel() -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# Figure 3.1 — Input panel overview (§3.1)
+# 図 3.1 — 入力パネルの概観 (§3.1)
 # ---------------------------------------------------------------------------
 def make_panel_overview(panel: pd.DataFrame):
     sub = panel[(panel["sex"] == "total")]
@@ -94,7 +98,7 @@ def make_panel_overview(panel: pd.DataFrame):
 
 
 # ---------------------------------------------------------------------------
-# Figure 3.2 — Smoothing before vs after (§3.2.1, eq. 3.1-3.2)
+# 図 3.2 — 平滑化前後の比較 (§3.2.1, 式 3.1–3.2)
 # ---------------------------------------------------------------------------
 def make_smoothing_before_after(panel: pd.DataFrame, *, disease: str = "heart_disease",
                                 sex: str = "total", cutoff: int = 2022):
@@ -107,6 +111,8 @@ def make_smoothing_before_after(panel: pd.DataFrame, *, disease: str = "heart_di
     ]
     piv = sub.pivot_table(index="age_low", columns="year",
                           values="rate_per_100k", aggfunc="mean").sort_index()
+    # [FIX 2026-09-02] 年軸を暦年の連続グリッドに reindex (欠測年は NaN → 重み 0)。run_backtest.py::build_matrix と同じ修正。
+    piv = piv.reindex(columns=range(int(piv.columns.min()), cutoff + 1))
     ages = piv.index.to_numpy(dtype=int)
     years = piv.columns.to_numpy(dtype=int)
     cfg = ScaleBBConfig(last_observed_year=cutoff, **SCALE_BB_CONFIG)
@@ -115,7 +121,7 @@ def make_smoothing_before_after(panel: pd.DataFrame, *, disease: str = "heart_di
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
     cmap = plt.get_cmap("tab10")
 
-    # Left: cross-sections along calendar year (representative ages)
+    # 左: 暦年方向の断面 (代表年齢)
     ax = axes[0]
     for k, a in enumerate([40, 60, 75]):
         i = int(np.where(ages == a)[0][0])
@@ -131,7 +137,7 @@ def make_smoothing_before_after(panel: pd.DataFrame, *, disease: str = "heart_di
     ax.grid(alpha=0.3)
     ax.legend(fontsize=7)
 
-    # Right: cross-sections along age (representative calendar years)
+    # 右: 年齢方向の断面 (代表暦年)
     ax = axes[1]
     for k, y in enumerate([1970, 2000, cutoff]):
         j = int(np.where(years == y)[0][0])
@@ -159,7 +165,7 @@ def make_smoothing_before_after(panel: pd.DataFrame, *, disease: str = "heart_di
 
 
 # ---------------------------------------------------------------------------
-# Figure 3.3 — Blending observed improvement rates into the long-term rate (§3.2.2, eq. 3.5)
+# 図 3.3 — 観測改善率から長期率へのブレンド (§3.2.2, 式 3.5)
 # ---------------------------------------------------------------------------
 def make_blend_schematic(panel: pd.DataFrame, *, disease: str = "heart_disease",
                          sex: str = "total", cutoff: int = 2022, horizon: int = 2045):
@@ -172,6 +178,8 @@ def make_blend_schematic(panel: pd.DataFrame, *, disease: str = "heart_disease",
     ]
     piv = sub.pivot_table(index="age_low", columns="year",
                           values="rate_per_100k", aggfunc="mean").sort_index()
+    # [FIX 2026-09-02] 年軸を暦年の連続グリッドに reindex (欠測年は NaN → 重み 0)。run_backtest.py::build_matrix と同じ修正。
+    piv = piv.reindex(columns=range(int(piv.columns.min()), cutoff + 1))
     ages = piv.index.to_numpy(dtype=int)
     years = piv.columns.to_numpy(dtype=int)
     cfg = ScaleBBConfig(last_observed_year=cutoff, horizon_year=horizon, **SCALE_BB_CONFIG)
@@ -216,14 +224,14 @@ def make_blend_schematic(panel: pd.DataFrame, *, disease: str = "heart_disease",
 
 
 # ---------------------------------------------------------------------------
-# Figure 4.1 — Schematic of the 3-cutoff design (§4.2)
+# 図 4.1 — 3 cutoff 設計の模式図 (§4.2)
 # ---------------------------------------------------------------------------
 def make_backtest_design():
     cutoffs = [2014, 2021, 2022]
     T = 2024
     fig, ax = plt.subplots(figsize=(9, 3.2))
     for row, yc in enumerate(cutoffs):
-        y = len(cutoffs) - 1 - row  # 2014, 2021, 2022 from top
+        y = len(cutoffs) - 1 - row  # 上から 2014, 2021, 2022
         ax.barh(y, yc - 1950, left=1950, height=0.5,
                 color="#1f77b4", alpha=0.75,
                 label="train window" if row == 0 else None)
@@ -254,7 +262,7 @@ def make_backtest_design():
 
 
 # ---------------------------------------------------------------------------
-# For §5 — collect the backtest result figures (output/ -> figures/)
+# §5 用 — バックテスト成果図の収集 (output/ → sections/figures/)
 # ---------------------------------------------------------------------------
 COLLECT = {
     # §5.1
@@ -267,11 +275,14 @@ COLLECT = {
     # §5.3
     "cutoff_comparison/figures/scalebb_cutoff_comparison.png":
         "fig_5_5_scalebb_cutoff_comparison.png",
-    # §6.2 / §6.3 (Figure 6.3 is generated directly by make_calibration_recovery_figure.py)
+    # §6.2 / §6.3 (図 6.3 は make_calibration_recovery_figure.py が直接生成)
     "directional/figures/scalebb_directional_per_cutoff.png":
         "fig_6_1_scalebb_directional_per_cutoff.png",
     "directional/figures/scalebb_vs_loglin_directional.png":
         "fig_6_2_scalebb_vs_loglin_directional.png",
+    # [ADD 2026-09-02] rolling-origin heatmap (§6.2, compute_rolling_origin.py)
+    "directional/figures/rolling_origin_da_heatmap.png":
+        "fig_6_4_rolling_origin_da_heatmap.png",
 }
 
 
@@ -279,7 +290,7 @@ def collect_backtest_figures():
     for src_rel, dst_name in COLLECT.items():
         src = _paths.OUTPUT_DIR / src_rel
         if not src.exists():
-            print(f"WARN: {src_rel} not generated yet, skipping (run run_all.sh first)")
+            print(f"WARN: {src_rel} が未生成のためスキップ (先に run_all.sh を実行)")
             continue
         dst = SECTIONS_FIGS / dst_name
         shutil.copyfile(src, dst)

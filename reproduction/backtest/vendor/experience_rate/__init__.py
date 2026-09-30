@@ -1,6 +1,5 @@
-"""Vendored algorithm namespace for the backtest reproduction.
+"""Vendored algorithm namespace for Paper_ICA2026 reproduction.
 
-An unmodified copy of the algorithm core shared with
-`reproduction/generational/KDB/src/experience_rate/_scalebb_core/`.
+Copied verbatim from EAS (`ValidationTools/EAS/src/experience_rate/_scalebb_core/`).
 Only the `_scalebb_core` subpackage is used by the reproduction pipeline.
 """

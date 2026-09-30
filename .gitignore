@@ -4,17 +4,30 @@ __pycache__/
 .venv/
 venv/
 
-# Generated at run time — reproduction outputs
+# Generated at run time — backtest (reference values: reproduction/backtest/reference_tables/)
 reproduction/backtest/output/
 reproduction/backtest/data/disease_panel_mortality.csv
+reproduction/backtest/data/panel_summary.csv
+
+# Generated at run time — BEL demonstration (reference values: reproduction/bel_demo/reference_output_20260930/)
+reproduction/bel_demo/data/processed/
+reproduction/bel_demo/data/processed_deathweight/
+reproduction/bel_demo/output/
+reproduction/bel_demo/output_deathweight/
 
 # Generated at run time — generational pipeline
-reproduction/generational/KDB/experience_rate.db
-reproduction/generational/KDB/data/processed/scalebb_apc_fit_*
-reproduction/generational/KDB/data/processed/scalebb_apc_projection_*
-reproduction/generational/KDB/data/processed/predicted_rate_*/
-reproduction/generational/KDB/output/
+reproduction/generational/EAS/output/
+reproduction/generational/EAS/data/processed/predicted_rate_repro*/
+
+# Outputs of the supplementary checks
+final/review/*.csv
+final/review/*.md
+final/sections/
+
+# Not redistributed (see DATA_SOURCES.md §2)
+reproduction/generational/EAS/data/lifetable/
 
 # OS / editor
 .DS_Store
 Thumbs.db
+*:Zone.Identifier

@@ -19,11 +19,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# [REPRO] Paths consolidated in the self-contained path layer
-# (originally: relative references from ROOT=parents[2])
+# [REPRO] パスは自己完結パス層に集約 (元: ROOT=parents[2] からの相対参照)
 import _paths
 
-BASE = _paths.OUTPUT_DIR  # originally: ROOT/"BackTest_ScaleBB_2015_2024"/"output"
+BASE = _paths.OUTPUT_DIR  # 元: ROOT/"BackTest_ScaleBB_2015_2024"/"output"
 OUT = BASE / "cutoff_comparison"
 (OUT / "tables").mkdir(parents=True, exist_ok=True)
 (OUT / "figures").mkdir(parents=True, exist_ok=True)

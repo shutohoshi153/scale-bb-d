@@ -1,0 +1,8 @@
+# 再生成物: 利用者は run_all.sh で再構築する。参照値は reference_output/ を参照。
+/data/processed/
+/output/
+# Python バイトコード
+**/__pycache__/
+*.pyc
+/data/processed_deathweight/
+/output_deathweight/

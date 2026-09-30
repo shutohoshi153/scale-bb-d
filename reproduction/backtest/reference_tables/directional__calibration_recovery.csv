@@ -1,0 +1,11 @@
+disease,setting,cutoff,long_term_rate,convergence_year,n_cells_evaluable,dir_acc_pct
+liver,2014_default,2014,0.01,2035,118,55.93
+liver,2014_L0,2014,0.0,2035,118,55.93
+liver,2014_L0_P2020,2014,0.0,2020,118,55.93
+liver,2021_default,2021,0.01,2035,37,56.76
+liver,2022_default,2022,0.01,2035,25,36.0
+hypertensive,2014_default,2014,0.01,2035,110,16.36
+hypertensive,2014_L0,2014,0.0,2035,110,21.82
+hypertensive,2014_L0_P2020,2014,0.0,2020,110,21.82
+hypertensive,2021_default,2021,0.01,2035,29,82.76
+hypertensive,2022_default,2022,0.01,2035,20,60.0

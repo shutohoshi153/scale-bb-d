@@ -1,0 +1,10 @@
+insurance_disease_id,insurance_disease_label_ja,eas_disease_id,estat_row_label,estat_file_examples,icd10_chapter,icd10_codes,preferred_rate_type,correspondence,notes
+cancer,がん(悪性新生物),cancer,（悪性新生物＜腫瘍＞）（再掲）,Z68.txt|Z70.txt|Z69.txt|Z71.txt|z00124_*.txt,II,C00-C96,registry,one_to_one,EAS は全国がん登録を優先。患者調査由来は近似用。
+heart_disease,心疾患(広義・高血圧性除く),heart_disease,（心疾患（高血圧性のものを除く））（再掲）,Z68.txt|Z70.txt,IX,I00-I52,initial_visit,one_to_one,LDLH特約で weight=0.4 として使用。
+heart_ischemic,心疾患(狭義・虚血性心疾患/急性心筋梗塞),ischemic_heart,虚血性心疾患（再掲）,Z68.txt|Z70.txt,IX,I20-I25,mortality,one_to_one,3大疾病の急性心筋梗塞相当。EASは死亡率を採用。
+cerebrovascular,脳血管疾患(脳卒中),cerebrovascular,脳血管疾患（再掲）,Z68.txt|Z70.txt,IX,I60-I69,initial_visit,one_to_one,脳内出血/脳梗塞/くも膜下出血含む。3大疾病。
+diabetes,糖尿病,diabetes,糖尿病（再掲）,Z68.txt|Z70.txt,IV,E10-E14,initial_visit,one_to_one,7大生活習慣病・8大疾病の構成要素。
+hypertensive,高血圧性疾患,hypertensive,高血圧性疾患（再掲）,Z68.txt|Z70.txt,IX,I10-I15,initial_visit,one_to_one,LDLH特約で weight=0.2 に配分(他より低い重み)。
+liver,肝疾患,liver_disease,肝疾患（再掲）,Z68.txt|Z70.txt,XI,K70-K77,initial_visit,one_to_one,アルコール性肝障害/肝硬変/肝炎を含む。7大生活習慣病。
+kidney,腎疾患(慢性腎臓病・腎不全等),kidney_disease,糸球体疾患，腎尿細管間質性疾患及び腎不全（再掲）,Z68.txt|Z70.txt,XIV,N00-N19,initial_visit,one_to_one,腎結石等は除く。N00-N19範囲では実用上等価。
+total,全疾病集計(総数),total,総数,Z68.txt|Z70.txt|Z10.txt|z00124_*.txt,ALL,A00-Z99,discharge,one_to_one,入院特約(MH/LSH/CLH)で使用する全疾病入院発生率。
