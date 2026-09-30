@@ -22,8 +22,9 @@ moved across the age groups.
 Data conditions varied
   granularity   5-year age groups (as published) or single ages
   post_years    2, 5 or 10 observed years after the shock (2023-2024, -2027, -2032)
-  exposure      person-years per single age and year: national 1.5 million, large insurer 100,000,
-                small insurer 10,000
+  exposure      person-years per single age and year, three illustrative levels: national (1.5 million),
+                intermediate (a hypothetical value chosen between the other two; not the size of any
+                insurer) and small (10,000)
   design        "aggregate": only the rate of each age x year cell is known; half of each cohort
                 was infected, so the cohort effect is diluted to log(0.5 + 0.5 exp(delta)).
                 "tracked": infection status is known for each person (individual follow-up), so
@@ -55,7 +56,7 @@ PRE = np.arange(2010, 2020)
 SHOCK = {2020: -0.08, 2021: -0.05, 2022: 0.03}
 EXPOSED_BIRTH = (1981, 2000)          # aged 20-39 in 2020
 INFECTED_SHARE = 0.5
-EXPOSURES = {"national": 1.5e6, "large_insurer": 1e5, "small_insurer": 1e4}
+EXPOSURES = {"national": 1.5e6, "intermediate": 1e5, "small": 1e4}   # "intermediate" is a placeholder value
 POST_YEARS = (2, 5, 10)
 DELTAS = (0.0, 0.05, 0.10, 0.20)
 PHI = 2.5

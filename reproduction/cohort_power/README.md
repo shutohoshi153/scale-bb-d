@@ -15,7 +15,7 @@
 | スクリプト | 内容 | 出力 |
 |---|---|---|
 | `apply_public_data.py` | 7 死因 × 男女の 14 系列（5 歳階級 20–85、2010–2019 + 2023–2024、死亡数重み）に推定器を適用 | `output/public_data_theta.csv`（theta、95% 区間、コホート回帰子の方が良く当てはまるか） |
-| `run_power.py` | 合成データで検出力を推定。年齢粒度（5 歳 / 各歳）× ショック後年数（2 / 5 / 10）× 曝露規模（全国 150 万 / 大手 10 万 / 小規模 1 万人年、各歳あたり）× 設計（集計 / 個人追跡）× 効果 δ（0, 0.05, 0.10, 0.20）、各 200 複製。過分散 φ = 2.5 | `output/power_long.csv`（複製ごと）、`output/power_summary.csv`（power, attribution, theta_mean, theta_sd, threshold） |
+| `run_power.py` | 合成データで検出力を推定。年齢粒度（5 歳 / 各歳）× ショック後年数（2 / 5 / 10）× 曝露規模（各歳あたりの人年: 全国水準 150 万 / 中間水準 / 小規模水準 1 万。中間水準は両者の間に置いた仮の値で、特定の保険会社の規模ではない）× 設計（集計 / 個人追跡）× 効果 δ（0, 0.05, 0.10, 0.20）、各 200 複製。過分散 φ = 2.5 | `output/power_long.csv`（複製ごと）、`output/power_summary.csv`（power, attribution, theta_mean, theta_sd, threshold） |
 
 検出の閾値は同じ条件の δ = 0 における theta の 95 パーセンタイル（偽陽性率 5%）。
 

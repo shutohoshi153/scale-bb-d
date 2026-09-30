@@ -17,7 +17,7 @@ Fitted by WLS with event counts as weights on the pre-shock years (2010–2019) 
 | Script | What it does | Output |
 |---|---|---|
 | `apply_public_data.py` | Applies the estimator to the 14 series of 7 causes × men and women (5-year groups 20–85, 2010–2019 + 2023–2024, death-count weights) | `output/public_data_theta.csv` (theta, 95% interval, whether the cohort regressor fits better) |
-| `run_power.py` | Power on synthetic data: age granularity (5-year / single) × post-shock years (2 / 5 / 10) × exposure (national 1.5 million / large insurer 100,000 / small insurer 10,000 person-years per single age) × design (aggregate / individual follow-up) × effect δ (0, 0.05, 0.10, 0.20), 200 replicates each, over-dispersion φ = 2.5 | `output/power_long.csv` (per replicate), `output/power_summary.csv` (power, attribution, theta_mean, theta_sd, threshold) |
+| `run_power.py` | Power on synthetic data: age granularity (5-year / single) × post-shock years (2 / 5 / 10) × exposure (person-years per single age: national 1.5 million / intermediate / small 10,000; the intermediate level is a hypothetical value between the two, not the size of any insurer) × design (aggregate / individual follow-up) × effect δ (0, 0.05, 0.10, 0.20), 200 replicates each, over-dispersion φ = 2.5 | `output/power_long.csv` (per replicate), `output/power_summary.csv` (power, attribution, theta_mean, theta_sd, threshold) |
 
 The detection threshold is the 95th percentile of theta under δ = 0 for the same condition (false-positive rate 5%).
 

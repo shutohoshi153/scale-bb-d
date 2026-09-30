@@ -2,8 +2,8 @@
 
 The public panel is cause-specific mortality in 5-year age groups (Vital Statistics of Japan), the
 proxy the paper uses in place of incidence. Two post-shock years (2023-2024) are observed and no
-individual follow-up exists, so this is the "5-year groups, 2 post-shock years, aggregate" condition
-of the power analysis. For each cause and sex (the 14 independent series) the script fits
+individual follow-up exists (the "5-year groups, 2 post-shock years, aggregate" design of the power
+analysis; its exposure varies by cause, sex and age and is not one of the simulated levels). For each cause and sex (the 14 independent series) the script fits
 
     log m(x, y) = a_x + g_x * y + b_y + theta * C(x, y)
 
