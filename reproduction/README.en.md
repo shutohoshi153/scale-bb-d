@@ -5,14 +5,15 @@
 *English translation of [README.md](README.md) (as of 2026-08-31). If the versions disagree, the Japanese version is authoritative.*
 
 This directory packages the validation pipeline of paper §3 "Data and Methods" and the §8 supplementary check (BEL sensitivity demonstration) in a form that can be reproduced and verified standalone.
-It consists of **three complementary packages**, which together cover one end-to-end path: public data → fit and validation → scenario rate tables → projection and sensitivity table.
+**Three complementary packages** cover one end-to-end path: public data → fit and validation → scenario rate tables → projection and sensitivity table; `cohort_power/`, the power analysis for the generational hypothesis of §7.3, is added to them.
 
 ```
 reproduction/
 ├── README.md        ← This file (division of roles and consistency)
 ├── backtest/        Point-forecast accuracy + directional accuracy validation   (§3.1 / §3.2 / §3.3 / §5 / §6)
-├── generational/    APC generational assumed-rate table generation             (Appendix B; details in generational/README.md)
-└── bel_demo/        Scenario generator → simple projection → sensitivity table   (§8, Appendix A; details in bel_demo/README.en.md)
+├── generational/    APC generational assumed-rate table generation             (§3.4, Appendix; details in generational/README.md)
+├── bel_demo/        Scenario generator → simple projection → sensitivity table   (§8; details in bel_demo/README.en.md)
+└── cohort_power/    Estimator of a pandemic cohort effect: public-data application and power analysis (§3.4 Eq. 3.9, §7.3 Table 7.2; details in cohort_power/README.md)
 ```
 
 ## Division of Roles Between the Three Packages
@@ -21,7 +22,8 @@ reproduction/
 |---|---|---|---|---|
 | **`backtest/`** | Backtest: point-forecast MAPE (Eqs. 3.7–3.8) and directional accuracy DA (Eqs. 3.9–3.10) for 3 cutoffs × ScaleBB × 3 baselines | Standalone scripts (`run_all.sh`) | Vital Statistics table 5-15 (bundled) | Validation tables and figures under `output/` |
 | **`generational/`** | APC fit/project → per-issue-year 1D assumed-rate tables (generational projection) | EAS CLI (`experience_rate`) | `mortality_apc_panel` (bundled) | Assumed-rate tables to be checked against `reference_output/` |
-| **`bel_demo/`** | Scenario rate tables (6 scenarios, Phase 2 re-run only) → BEL projection (Eqs. 8.1–8.2) → Table 8.3, Figure 8.1, Table A.1 | Standalone scripts (`run_all.sh`) | Shares the panel and core with `backtest/`; FSA yield-curve tool (bundled) | Sensitivity table and figure under `output/`, checked against `reference_output/` |
+| **`bel_demo/`** | Scenario rate tables (6 scenarios, Phase 2 re-run only) → BEL projection (Eqs. 8.1–8.2) → Table 8.1, capital figures of §8.2 | Standalone scripts (`run_all.sh`) | Shares the panel and core with `backtest/`; FSA yield-curve tool (bundled) | Sensitivity table and figure under `output/`, checked against `reference_output/` |
+| **`cohort_power/`** | Estimator (3.9) applied to the 14 series, and power by data condition (Table 7.2) | Two standalone scripts | The `backtest/` panel (or the bundled prebuilt one) | `output/public_data_theta.csv`, `output/power_summary.csv` |
 
 `backtest/` tests "whether Scale BB is suited to point forecasting" (conclusion: it trails the best baseline by a few pp on MAPE but holds the direction),
 `generational/` covers the stage of "running the improvement-rate framework forward to produce rate tables in a practice-ready distribution format,"
@@ -34,12 +36,12 @@ The following checks confirm that the shared directory is free of contradictions
 
 1. **Identical algorithm core**: `backtest/vendor/experience_rate/_scalebb_core/` and
    `generational/EAS/src/experience_rate/_scalebb_core/` are **bit-identical** (and also match the current EAS).
-   Both packages use the same Scale BB / APC implementation (§3.2 Eqs. 3.1–3.6, Appendix B Eqs. B.1–B.2).
+   Both packages use the same Scale BB / APC implementation (§3.2 Eqs. 3.1–3.6, §3.4 Eqs. 3.7–3.8).
 2. **Identical input mortality data**: both start from cause-of-death mortality rates from the e-Stat Vital Statistics (人口動態統計).
    For the shared cells (cancer / cerebrovascular / heart / hypertensive / total), an **exact match** (difference 0) was confirmed.
-3. **Common position of the data**: cause-specific mortality is the assumption itself for death benefits contingent on
-   specific diseases, and the claims of the paper are limited to that application (revised 2026-09-30; incidence rates of
-   medical insurance are not treated, and an insurer can reuse `backtest/run_own_data.py` on its own experience).
+3. **Common position of the data**: the intended target of the study is the incidence rate of medical insurance and its generational effect;
+   cause-specific mortality is the public-data substitute, and it is the assumption itself for death benefits contingent on specific diseases
+   (revised again 2026-09-30; an insurer can reuse `backtest/run_own_data.py` and `cohort_power/` on its own incidence and follow-up data).
 4. **Common core hyperparameters**: `long_term_rate=0.01`, `convergence_year=2035`,
    `lam_row=40`, `diff_order=2`.
 

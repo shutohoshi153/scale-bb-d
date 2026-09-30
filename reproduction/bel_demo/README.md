@@ -2,7 +2,7 @@
 
 # bel_demo — §8 BEL 感応度デモの再現パッケージ（シナリオ生成器 → プロジェクション → 感応度表）
 
-論文 §8（経済価値ベース評価下の BEL 感応度デモ）と付録 A（生命保険リスク所要資本・MOCE の簡易計算）を、`reproduction/` 配下だけで再実行できる形にまとめたもの。隣の `generational/` が「Scale BB-D を前向きに回して率テーブルを作る」段を担うのに対し、本パッケージはその**率テーブルを評価モデルに流し、規制シナリオの感応度表にするまで**を担う。表 8.3・図 8.1・表 A.1 はここから生成される。
+論文 §8（経済価値ベース評価下の BEL 感応度デモ）（§8.2 末尾の生命保険リスク所要資本・MOCE の簡易計算を含む）を、`reproduction/` 配下だけで再実行できる形にまとめたもの。隣の `generational/` が「Scale BB-D を前向きに回して率テーブルを作る」段を担うのに対し、本パッケージはその**率テーブルを評価モデルに流し、規制シナリオの感応度表にするまで**を担う。表 8.3・図 8.1・表 A.1 はここから生成される。
 
 **実務者向けの位置づけ**: 本パッケージは、論文 §9.2 の論拠 1・2（生成器は評価モデルの上流に置くだけで、出力は既存実務が読む率テーブル形式であり、静的表×一律係数のストレス表作成工程を置き換える）を実行可能な形で示すもの。`data/processed/scn_claim_rates.csv` の列仕様（`SCN_CD, BNFT_Q, GNDR_CD, ISSUE_AGE, DUR, ASSM_RT`）は評価モデルの入力形式に合わせて用意しており、率テーブル・モデルポイント・割引率を差し替えれば自社の感応度が得られる。
 
@@ -20,8 +20,8 @@ bel_demo/
 ├── build_scenario_claim_rates.py   ① シナリオ生成器: Phase 1 フィット 1 回 → L 差し替えで 6 シナリオ
 ├── verify_pipeline_rates.py        ② V1a: 率レベルの独立再導出・全件突合
 ├── calc_bel_standalone.py          ③ プロジェクション（式 8.1–8.2）+ V2/V3 チェック
-├── aggregate_bel_results.py        ④ 表 8.3 / 図 8.1
-├── calc_esr_life_risk.py           ⑤ 付録 A（告示 56–64 条・81 条・29–30 条）
+├── aggregate_bel_results.py        ④ 表 8.1 / 感応度の棒グラフ（論文には不掲載）
+├── calc_esr_life_risk.py           ⑤ §8.2 の所要資本（告示 56–64 条・81 条・29–30 条）
 ├── data/external/fsa_esr/          金融庁公表資料（イールド・カーブ作成ツール）+ 出典 README
 ├── data/processed/                 再生成物（git 追跡外）
 ├── output/                         再生成物（git 追跡外）
@@ -48,7 +48,7 @@ bash run_all.sh            # 6 スクリプト → check_reference.py で refere
 | ① | `build_scenario_claim_rates.py` | `../backtest/data/prebuilt_disease_panel_mortality.csv`、`_scalebb_core`（`../backtest/vendor/`） | `scn_claim_rates.csv`（6 シナリオ × 3 疾病 × 2 性別）、`scn_mortality_rates.csv`（全死因・BASE 固定）、検算用 `rate_surface_*.csv` |
 | ② | `verify_pipeline_rates.py` | ①の出力 | `output/verify_pipeline_rates.csv`（不一致 0 件で合格） |
 | ③ | `calc_bel_standalone.py` | ①⓪の出力 | `output/bel_by_mp_scenario.csv`、`verify_bel_checks.csv` |
-| ④ | `aggregate_bel_results.py` | ③の出力 | `output/bel_sensitivity_table.csv`（= 表 8.3）、`bel_sensitivity_bar.png`（= 図 8.1） |
+| ④ | `aggregate_bel_results.py` | ③の出力 | `output/bel_sensitivity_table.csv`（= 表 8.1）、`bel_sensitivity_bar.png`（論文には不掲載） |
 | ⑤ | `calc_esr_life_risk.py` | ①⓪の出力 | `output/esr_life_risk_by_mp.csv`、`esr_life_risk_summary.csv`（= 表 A.1） |
 
 ## 仕様（§8.4–8.5）
@@ -91,7 +91,7 @@ bash run_all.sh            # 6 スクリプト → check_reference.py で refere
 
 - 生存者の更新: `S(t+1) = S(t)·(1 − q_dis − q_other − q_lapse)`。`q_dis` は 3 死因（がん・心疾患・脳血管疾患）の死亡率、`q_other` はその他の死因の死亡率（全死因 BASE − 3 死因 BASE）。2026-09-03 版までは健康事象の発現で支払う給付として `1 − q_dis − q_death − q_lapse`（`q_death` = 全死因）としており、死亡給付として読むと 3 死因による死亡が二重に脱退に入っていた。
 - 水準ストレス ESR_M: 罹患・障害リスク +20%（第 59・60 条）から死亡リスク +12.5%（第 56 条）に変更。ICS_C・ESR_M ではその他の死因にも同じ係数をかける。
-- 付録 A（`calc_esr_life_risk.py`）: 死亡サブリスク = ESR_M の ΔBEL、長寿・罹患障害サブリスクは 0。
+- §8.2 の所要資本（`calc_esr_life_risk.py`）: 死亡サブリスク = ESR_M の ΔBEL、長寿・罹患障害サブリスクは 0。
 - 結果: BASE の BEL 合計 333,233 → 364,198 円（+9.3%）、ICS_T の感応度は 0.5〜1.0pp 増。旧計算の結果は `reference_output_20260903/` に残る。新旧を並べる計算は `final/review/scripts/death_benefit_reading_a6.py`。
 - 実稼働モデル（FMS）での突合（論文 §9.2）は旧計算で行ったもので、新計算では再実行していない。率表（`scn_claim_rates.csv`）の形式は同じで、ESR_M の倍率だけが変わる。
 

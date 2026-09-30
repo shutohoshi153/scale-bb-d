@@ -2,7 +2,7 @@
 
 # bel_demo — Reproduction package for the §8 BEL sensitivity demonstration (scenario generator → projection → sensitivity table)
 
-This package re-runs §8 of the paper (BEL sensitivity under economic-value-based valuation) and Appendix A (simplified life-insurance risk capital and MOCE) entirely inside `reproduction/`. Where the neighbouring `generational/` package runs Scale BB-D forward to produce rate tables, this package **takes those rate tables into a valuation model and turns them into a regulatory sensitivity table**. Table 8.3, Figure 8.1 and Table A.1 are generated here.
+This package re-runs §8 of the paper (BEL sensitivity under economic-value-based valuation) (including the simplified life-insurance risk capital and MOCE at the end of §8.2) entirely inside `reproduction/`. Where the neighbouring `generational/` package runs Scale BB-D forward to produce rate tables, this package **takes those rate tables into a valuation model and turns them into a regulatory sensitivity table**. Table 8.3, Figure 8.1 and Table A.1 are generated here.
 
 **For practitioners**: this package is the executable form of arguments 1 and 2 of §9.2 — the generator sits upstream of the valuation model, its output is the rate-table format valuation practice already consumes, and it replaces the "static table × uniform factor" stress-table step. The column layout of `data/processed/scn_claim_rates.csv` (`SCN_CD, BNFT_Q, GNDR_CD, ISSUE_AGE, DUR, ASSM_RT`) is designed as a valuation-model input; swap in your own rate tables, model points and discount curve to obtain your own sensitivities.
 
@@ -20,8 +20,8 @@ bel_demo/
 ├── build_scenario_claim_rates.py   ① scenario generator: one Phase 1 fit → 6 scenarios by replacing L
 ├── verify_pipeline_rates.py        ② V1a: independent re-derivation of every rate
 ├── calc_bel_standalone.py          ③ projection (equations 8.1–8.2) + V2/V3 checks
-├── aggregate_bel_results.py        ④ Table 8.3 / Figure 8.1
-├── calc_esr_life_risk.py           ⑤ Appendix A (notice Articles 56–64, 81, 29–30)
+├── aggregate_bel_results.py        ④ Table 8.1 / sensitivity bar chart (not in the paper)
+├── calc_esr_life_risk.py           ⑤ capital of §8.2 (notice Articles 56–64, 81, 29–30)
 ├── data/external/fsa_esr/          FSA published material (yield-curve tool) + source README
 ├── data/processed/                 regenerated (not tracked)
 ├── output/                         regenerated (not tracked)
@@ -48,7 +48,7 @@ Environment: as `../backtest/README.en.md` (Python 3.10+, numpy / pandas / matpl
 | ① | `build_scenario_claim_rates.py` | `../backtest/data/prebuilt_disease_panel_mortality.csv`, `_scalebb_core` (`../backtest/vendor/`) | `scn_claim_rates.csv` (6 scenarios × 3 diseases × 2 sexes), `scn_mortality_rates.csv` (all-cause, BASE fixed), `rate_surface_*.csv` for checking |
 | ② | `verify_pipeline_rates.py` | output of ① | `output/verify_pipeline_rates.csv` (pass = 0 mismatches) |
 | ③ | `calc_bel_standalone.py` | outputs of ⓪ and ① | `output/bel_by_mp_scenario.csv`, `verify_bel_checks.csv` |
-| ④ | `aggregate_bel_results.py` | output of ③ | `output/bel_sensitivity_table.csv` (= Table 8.3), `bel_sensitivity_bar.png` (= Figure 8.1) |
+| ④ | `aggregate_bel_results.py` | output of ③ | `output/bel_sensitivity_table.csv` (= Table 8.1), `bel_sensitivity_bar.png` (not in the paper) |
 | ⑤ | `calc_esr_life_risk.py` | outputs of ⓪ and ① | `output/esr_life_risk_by_mp.csv`, `esr_life_risk_summary.csv` (= Table A.1) |
 
 ## Specification (§8.4–8.5)
@@ -91,7 +91,7 @@ The BEL calculation (Eq. 8.1 of the paper) was changed when the scope of the pap
 
 - Survivors: `S(t+1) = S(t)·(1 − q_dis − q_other − q_lapse)`, where `q_dis` is the death rate from the three causes (cancer, heart disease, cerebrovascular disease) and `q_other` that from all other causes (all-cause BASE less the three causes BASE). Up to the 2026-09-03 version the product was valued as a benefit paid on a health event, `1 − q_dis − q_death − q_lapse` with `q_death` the all-cause rate, which for a death benefit removes a death from the three causes twice.
 - Level stress ESR_M: mortality risk +12.5% (Art. 56) instead of morbidity and disability risk +20% (Arts. 59–60). In ICS_C and ESR_M the same factor is applied to the other causes.
-- Appendix A (`calc_esr_life_risk.py`): the mortality sub-risk equals the ΔBEL of ESR_M; the longevity and morbidity sub-risks are zero.
+- Capital of §8.2 (`calc_esr_life_risk.py`): the mortality sub-risk equals the ΔBEL of ESR_M; the longevity and morbidity sub-risks are zero.
 - Result: total BASE BEL 333,233 → 364,198 yen (+9.3%); the ICS_T sensitivities rise by 0.5–1.0pp. The results of the earlier calculation remain in `reference_output_20260903/`; `final/review/scripts/death_benefit_reading_a6.py` puts the two side by side.
 - The reconciliation on the production model (FMS; §9.2 of the paper) was made with the earlier calculation and has not been repeated. The rate-table format (`scn_claim_rates.csv`) is unchanged; only the ESR_M factor differs.
 

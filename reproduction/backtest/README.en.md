@@ -11,7 +11,7 @@ It has no dependency on any other directory in the repository (input data and th
 For a detailed explanation of what each script does (inputs, processing, outputs), see [SCRIPTS.en.md](SCRIPTS.en.md).
 
 > One of the two packages under `Paper_ICA2026/reproduction/`. It shares the algorithm core and input mortality data
-> with its sister package `../generational/` (APC generational assumed-rate generation, Appendix B; details in `../generational/README.md`).
+> with its sister package `../generational/` (APC generational assumed-rate generation, §3.4 and Appendix; details in `../generational/README.md`).
 > For the overall division of roles and consistency, see `../README.md`.
 
 ---
@@ -80,7 +80,7 @@ backtest/
 ├── vendor/
 │   └── experience_rate/_scalebb_core/
 │       ├── model.py                 Scale BB core (§3.2, Eqs. 3.1–3.6). Bundled unmodified from EAS
-│       └── apc_model.py             APC extension (Appendix B, Eqs. B.1–B.2). Bundled for reference. [CHG 2026-09-03] the `dummy` mode now fits the non-COVID trend within a local window (`covid_trend_window`=15 years) (Appendix B Table B.1, §10.5) [ADD 2026-09-03] `project_scale_bb_apc(apply_cohort=True)` carries γ(c) into the projection (off by default; better than AP at cutoff 2014 in the §10.5 test, worse at 2019–2022). [CHG 2026-09-03] `decompose_apc_additive` now removes the linear component of γ and smooths γ along the cohort axis (`lam_gamma`) [FIX 2026-09-30] the cohort penalty now follows the actual birth-cohort direction (`cohort_year_step`: one age-group step advances the calendar year by the group width, (i+1, j+5) for 5-year age groups on an annual grid; the earlier code used (i+1, j+1), which does not follow a birth cohort; Appendix B Eq. B.2). `model.py` is unchanged, so the numbers of §5–§6 and §8 are unaffected
+│       └── apc_model.py             APC extension (§3.4, Eqs. 3.7–3.8). Bundled for reference. [CHG 2026-09-03] the `dummy` mode now fits the non-COVID trend within a local window (`covid_trend_window`=15 years) (Appendix B Table B.1, §10.5) [ADD 2026-09-03] `project_scale_bb_apc(apply_cohort=True)` carries γ(c) into the projection (off by default; better than AP at cutoff 2014 in the §10.5 test, worse at 2019–2022). [CHG 2026-09-03] `decompose_apc_additive` now removes the linear component of γ and smooths γ along the cohort axis (`lam_gamma`) [FIX 2026-09-30] the cohort penalty now follows the actual birth-cohort direction (`cohort_year_step`: one age-group step advances the calendar year by the group width, (i+1, j+5) for 5-year age groups on an annual grid; the earlier code used (i+1, j+1), which does not follow a birth cohort; Appendix B Eq. B.2). `model.py` is unchanged, so the numbers of §5–§6 and §8 are unaffected
 ├── data/
 │   ├── raw/5-15_…_0003411659.csv    Input: Vital Statistics table 5-15 (1950–2024)
 │   ├── disease_estat_mapping.csv    Disease → cause-of-death code mapping (§3.1.2)

@@ -1,16 +1,9 @@
 {
-  "generated_at_utc": "2026-09-30T11:47:58+00:00",
-  "git_commit": "82c2cbc846b78cc4da8fa753969a714160cd4ede",
+  "generated_at_utc": "2026-09-30T13:21:24+00:00",
+  "git_commit": "bb681aba16106dd77ed62972c933a5fc3b847f3b",
   "git_dirty_files_in_package": [
     "M ICA/Paper_ICA2026/reproduction/backtest/README.en.md",
-    " M ICA/Paper_ICA2026/reproduction/backtest/README.md",
-    " M ICA/Paper_ICA2026/reproduction/backtest/SCRIPTS.en.md",
-    " M ICA/Paper_ICA2026/reproduction/backtest/compute_da_inference.py",
-    " M ICA/Paper_ICA2026/reproduction/backtest/compute_directional_accuracy.py",
-    " M ICA/Paper_ICA2026/reproduction/backtest/make_calibration_recovery_figure.py",
-    " M ICA/Paper_ICA2026/reproduction/backtest/run_all.sh",
-    " M ICA/Paper_ICA2026/reproduction/backtest/run_own_data.py",
-    " M ICA/Paper_ICA2026/reproduction/backtest/verify_paper_tables.py"
+    " M ICA/Paper_ICA2026/reproduction/backtest/README.md"
   ],
   "inputs": {
     "data/raw/5-15_死因_性_5歳階級_年次_死亡数率__0003411659.csv": "4eb09a13c43b76bf63493db473df537f1fe0e489fe23bc50c26072705d571982",

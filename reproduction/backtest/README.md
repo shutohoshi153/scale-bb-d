@@ -9,7 +9,7 @@
 各スクリプトの処理内容（入力・処理・出力）の詳細な解説は [SCRIPTS.md](SCRIPTS.md) を参照。
 
 > `Paper_ICA2026/reproduction/` の 2 パッケージの一方。姉妹パッケージ `../generational/`
-> （APC世代別予定率生成、付録 B。詳細は `../generational/README.md`）とアルゴリズムコア・入力死亡率データを共有する。
+> （APC世代別予定率生成、§3.4・付録。詳細は `../generational/README.md`）とアルゴリズムコア・入力死亡率データを共有する。
 > 分担と整合性の全体像は `../README.md` を参照。
 
 ---
@@ -78,7 +78,7 @@ backtest/
 ├── vendor/
 │   └── experience_rate/_scalebb_core/
 │       ├── model.py                 Scale BB コア (§3.2, 式 3.1–3.6)。EAS から無改変で同梱。[CHG 2026-09-03] 投影起点 `ScaleBBConfig.base_level`（既定 "observed" = 観測率、論文式 3.6 の記述どおり。旧実装は平滑化率）と収束期間 `convergence_period` を追加
-│       └── apc_model.py             APC 拡張 (付録 B, 式 B.1–B.2)。参照用に同梱。[CHG 2026-09-03] `dummy` モードの非 COVID トレンドを局所窓（`covid_trend_window`=15 年）で当てはめるよう修正（付録 B 表 B.1、§10.5） [ADD 2026-09-03] `project_scale_bb_apc(apply_cohort=True)` で γ(c) を投影に持ち越す形を追加（既定は無効。§10.5 のテストでは cutoff 2014 で AP より改善、2019–2022 では劣後）。[CHG 2026-09-03] `decompose_apc_additive` に γ の線形成分除去とコホート軸平滑化（`lam_gamma`）を追加 [FIX 2026-09-30] コホート罰則を実際の出生コホート方向に修正（`cohort_year_step`: 年齢 1 階級につき暦年を階級幅ぶん進める。5 歳階級 × 暦年 1 年刻みで (i+1, j+5)。旧実装は (i+1, j+1) で出生コホートを辿っていなかった。付録 B 式 B.2）。`model.py` は不変で、§5–§6・§8 の数値には影響しない
+│       └── apc_model.py             APC 拡張 (§3.4, 式 3.7–3.8)。参照用に同梱。[CHG 2026-09-03] `dummy` モードの非 COVID トレンドを局所窓（`covid_trend_window`=15 年）で当てはめるよう修正（付録 B 表 B.1、§10.5） [ADD 2026-09-03] `project_scale_bb_apc(apply_cohort=True)` で γ(c) を投影に持ち越す形を追加（既定は無効。§10.5 のテストでは cutoff 2014 で AP より改善、2019–2022 では劣後）。[CHG 2026-09-03] `decompose_apc_additive` に γ の線形成分除去とコホート軸平滑化（`lam_gamma`）を追加 [FIX 2026-09-30] コホート罰則を実際の出生コホート方向に修正（`cohort_year_step`: 年齢 1 階級につき暦年を階級幅ぶん進める。5 歳階級 × 暦年 1 年刻みで (i+1, j+5)。旧実装は (i+1, j+1) で出生コホートを辿っていなかった。付録 B 式 B.2）。`model.py` は不変で、§5–§6・§8 の数値には影響しない
 ├── data/
 │   ├── raw/5-15_…_0003411659.csv    入力: 人口動態統計 5-15 表 (1950–2024)
 │   ├── disease_estat_mapping.csv    疾病 → 死因コード対応 (§3.1.2)
@@ -144,7 +144,7 @@ python verify_paper_tables.py --sections ../../final/sections  # 日本語版
 - 元は `ROOT = Path(__file__).resolve().parents[2]` でリポジトリルートを辿り、`EAS/src`・`ScaleBB_Research/data/raw`・`MedicalInsuranceProduct/` を参照していた。2026-07 のリポジトリ再編でこれらは無効化された。
 - 本パッケージでは、入力データとアルゴリズムコアを同梱し、`_paths.py` 1 か所で解決する。各スクリプトの改変箇所には `# [REPRO]` マーカーを付した。
 
-`vendor/experience_rate/_scalebb_core/` は EAS（`ValidationTools/EAS/src/experience_rate/_scalebb_core/`）からの**無改変コピー**であり、§3.2/付録 B の数式に対応する実装そのものである。
+`vendor/experience_rate/_scalebb_core/` は EAS（`ValidationTools/EAS/src/experience_rate/_scalebb_core/`）からの**無改変コピー**であり、§3.2/§3.4 の数式に対応する実装そのものである。
 
 ## データ出典・ライセンス
 
